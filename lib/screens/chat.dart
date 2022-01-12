@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
@@ -14,6 +15,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:verdiscom/service/confrenceservice.dart';
 import 'package:verdiscom/model/confrence.dart' as model;
 
@@ -257,15 +259,59 @@ class _ChatPageState extends State<ChatPage> {
               return Padding(
                 padding: const EdgeInsets.only(right: 20.0),
                 child: GestureDetector(
-                  onTap: () async {
-                    await ConfrenceService(
-                        instance: model.Confrence(
-                            avatarUrl: userData['imageUrl'],
-                            subject: widget.room.name ?? widget.backupName,
-                            displayName: username,
-                            emailID: FirebaseAuth.instance.currentUser!.email!,
-                            room: widget.room.id))
-                        .urlLaunch();
+                  onTap: () {
+                    showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('Sorry!'),
+                            content: RichText(
+                              textAlign: TextAlign.center,
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: 'Unfortunately, calling is currently not supported on the web. You can find out more ',
+                                    style: TextStyle(
+                                        color:
+                                        Theme.of(context).appBarTheme.toolbarTextStyle!.color),
+                                  ),
+                                  TextSpan(
+                                    text:
+                                    'here',
+                                    style: const TextStyle(color: Colors.blue),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () {
+                                        launch('https://github.com/saibotma/jitsi_meet_wrapper/issues/11');
+                                      },
+                                  ),
+                                  TextSpan(
+                                    text:
+                                    " if you'd like.",
+                                    style: TextStyle(
+                                        color:
+                                        Theme.of(context).appBarTheme.toolbarTextStyle!.color),
+                                  ),
+                                  TextSpan(
+                                    text: 'https://garv-shah.github.io',
+                                    style: const TextStyle(color: Colors.blue),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () {
+                                        launch('https://garv-shah.github.io');
+                                      },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            actions: <Widget>[
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          );
+                        });
                   },
                   child: const Icon(
                     Icons.call,
