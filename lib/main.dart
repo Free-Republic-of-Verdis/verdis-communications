@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:verdiscom/screens/landing_page.dart';
 import 'package:verdiscom/util/const.dart';
 import 'package:statusbarz/statusbarz.dart';
@@ -10,9 +11,14 @@ import 'package:easy_dynamic_theme/easy_dynamic_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } else {
+    await Firebase.initializeApp();
+  }
+
   runApp(
     StatusbarzCapturer(
       child: EasyDynamicThemeWidget(

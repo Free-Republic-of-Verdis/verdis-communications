@@ -51,7 +51,7 @@
       <root url="file://$USER_HOME$/development/flutter/.pub-cache/hosted/pub.dartlang.org/wakelock_web-0.4.0" />
       <root url="file://$USER_HOME$/development/flutter/.pub-cache/hosted/pub.dartlang.org/wakelock_macos-0.4.0" />
       <root url="file://$USER_HOME$/development/flutter/.pub-cache/hosted/pub.dartlang.org/just_audio-0.9.18" />
-      <root url="file://$USER_HOME$/development/flutter/.pub-cache/hosted/pub.dartlang.org/jitsi_meet_wrapper-0.0.1" />
+      <root url="file://$PROJECT_DIR$/../jitsi_meet_wrapper/jitsi_meet_wrapper" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
