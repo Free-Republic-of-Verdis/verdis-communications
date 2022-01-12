@@ -291,14 +291,6 @@ class _ChatPageState extends State<ChatPage> {
                                         color:
                                         Theme.of(context).appBarTheme.toolbarTextStyle!.color),
                                   ),
-                                  TextSpan(
-                                    text: 'https://garv-shah.github.io',
-                                    style: const TextStyle(color: Colors.blue),
-                                    recognizer: TapGestureRecognizer()
-                                      ..onTap = () {
-                                        launch('https://garv-shah.github.io');
-                                      },
-                                  ),
                                 ],
                               ),
                             ),
