@@ -36,11 +36,20 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>$(PRODUCT_NAME) needs access to your camera for meetings.</string>
+	<string>Verdis Communications needs access to your camera for meetings.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>$(PRODUCT_NAME) needs access to your microphone for meetings.</string>
+	<string>Verdis Communications needs access to your microphone for meetings.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>The Nova System requires the photo library to change profile pictures</string>
+	<string>Verdis Communications requires the photo library to change profile pictures</string>
+	<key>RTCAppGroupIdentifier</key>
+	<string>group.com.garv.verdiscom</string>
+	<key>RTCScreenSharingExtension</key>
+	<string>com.garv.verdiscom.Broadcast-Extension</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+		<string>voip</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

@@ -11,7 +11,11 @@ class ConfrenceService {
   Map<FeatureFlag, bool> feature = {
     FeatureFlag.isInviteEnabled: false,
     FeatureFlag.isPipEnabled: true,
-    FeatureFlag.isHelpButtonEnabled: false
+    FeatureFlag.isHelpButtonEnabled: false,
+    FeatureFlag.isIosScreensharingEnabled: true,
+    FeatureFlag.isAndroidScreensharingEnabled: true,
+    FeatureFlag.isRecordingEnabled: true,
+    FeatureFlag.isCloseCaptionsEnabled: true
   };
 
   connect() async {
