@@ -23,9 +23,9 @@ doc/api/
 ios/fastlane/.env
 .gitsecret/keys/random_seed
 !*.secret
-web/index.html
 macos/Runner/GoogleService-Info.plist
 ios/Runner/GoogleService-Info.plist
 android/app/google-services.json
 android/google-play-secret.json
 android/upload-keystore.jks
+lib/firebase_options.dart
