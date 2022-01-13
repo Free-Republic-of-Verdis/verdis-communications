@@ -68,7 +68,7 @@ jobs:
           cd ./android && sudo bundle install && bundle exec fastlane beta
       - name: Deploy to TestFlight iOS
         run: |
-          cd ./ios && fastlane cert && fastlane sigh && bundle exec fastlane beta
+          cd ./ios && bundle exec fastlane beta
         env:
           TEAM_ID: ${{ secrets.TEAM_ID }}
           ITC_TEAM_ID: ${{ secrets.ITC_TEAM_ID }}
