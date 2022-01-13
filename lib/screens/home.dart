@@ -173,7 +173,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
             if (snapshot.connectionState == ConnectionState.done) {
                 String htmlToParse = snapshot.data!.body.toString();
-                print(htmlToParse);
+                //print(htmlToParse);
               return ListView(
                 children: [
                   Padding(
@@ -253,6 +253,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
             var atomFeed = AtomFeed.parse(snapshot.data!.body.toString());
             double width = MediaQuery.of(context).size.width;
             var inputFormat = DateFormat('dd/MM/yyyy');
+            var mdInputFormat = DateFormat('yyyy-MM-dd');
 
             return Scaffold(
               body: ListView.builder(
@@ -363,6 +364,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                       recognizer: TapGestureRecognizer()
                                         ..onTap = () async {
                                           //launch(atomFeed.items![index - 1].links!.first.href!);
+                                          print("https://raw.githubusercontent.com/Free-Republic-of-Verdis/verdis-blog/main/_posts/${mdInputFormat.format(atomFeed.items![index - 1].updated!)}-${atomFeed.items![index - 1].links!.first.href!.split('/').last}.md");
                                           var blogPost = await getBlogPage(atomFeed.items![index - 1].links!.first.href!);
                                           Navigator.push(
                                               context, MaterialPageRoute(builder: (_) => blogPost));

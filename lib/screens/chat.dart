@@ -17,6 +17,7 @@ import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:verdiscom/service/confrenceservice.dart';
+import 'package:verdiscom/service/confrenceserviceweb.dart' as web;
 import 'package:verdiscom/model/confrence.dart' as model;
 
 import 'home.dart';
