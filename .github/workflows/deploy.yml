@@ -62,10 +62,6 @@ jobs:
           ssh-add "$SSH_PATH/id_rsa"
         env:
           PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-      - name: Deploy to Play Store Beta
-        run: |
-          flutter build appbundle
-          cd ./android && sudo bundle install && bundle exec fastlane beta
       - name: Deploy to TestFlight iOS
         run: |
           cd ./ios && fastlane cert && fastlane sigh && bundle exec fastlane beta
@@ -82,3 +78,7 @@ jobs:
           APPLE_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
           APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
           APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+      - name: Deploy to Play Store Beta
+        run: |
+          flutter build appbundle
+          cd ./android && sudo bundle install && bundle exec fastlane beta
