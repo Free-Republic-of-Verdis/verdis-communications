@@ -209,8 +209,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                     author,
                     style: TextStyle(
                         fontStyle: FontStyle.normal,
-                        fontWeight:
-                        FontWeight.normal, // regular weight
+                        fontWeight: FontWeight.normal, // regular weight
                         color: (() {
                           if (Theme.of(context).brightness ==
                               Brightness.light) {
@@ -228,7 +227,13 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                   ),
                   Padding(
                     padding: const EdgeInsets.all(30),
-                    child: Image.asset('assets/images/banner.png'),
+                    child: (() {
+                      if (Theme.of(context).brightness == Brightness.light) {
+                        return Image.asset('assets/images/banner.png');
+                      } else {
+                        return Image.asset('assets/images/banner-dark.png');
+                      }
+                    }()),
                   )
                 ],
               );

@@ -100,6 +100,7 @@ flutter:
     - assets/icon/banner.svg
     - assets/images/garv.jpg
     - assets/images/banner.png
+    - assets/images/banner-dark.png
   fonts:
     - family: Cookie
       fonts:
