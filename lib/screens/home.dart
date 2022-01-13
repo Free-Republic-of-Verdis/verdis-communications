@@ -26,7 +26,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:verdiscom/util/buy_me_a_coffee/buy_me_a_coffee_widget.dart';
 import 'package:adaptive_dialog/adaptive_dialog.dart';
 import 'package:verdiscom/util/contactus.dart';
-import 'package:flutter_widget_from_html/flutter_widget_from_html.dart' as html;
+import 'package:uzu_flavored_markdown/uzu_flavored_markdown.dart' as uzu;
 import 'package:http/http.dart' as http;
 
 firebase_storage.FirebaseStorage storage =
@@ -56,7 +56,7 @@ String username = 'User';
 String email = 'user@example.com';
 late User loggedInUser;
 
-class MyWidgetFactory extends html.WidgetFactory {
+/*class MyWidgetFactory extends html.WidgetFactory {
   @override
   void parse(html.BuildMetadata meta) {
     if (meta.element.innerHtml.contains(" | Verdis Communications")) {
@@ -85,7 +85,7 @@ class MyWidgetFactory extends html.WidgetFactory {
     }
     return super.parse(meta);
   }
-}
+}*/
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -95,7 +95,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> with TickerProviderStateMixin {
-  final html.WidgetFactory widgetFactory = MyWidgetFactory();
+  //final html.WidgetFactory widgetFactory = MyWidgetFactory();
 
   @override
   void dispose() {
@@ -153,7 +153,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    getBlogPage(String url) async {
+    getBlogPage(String url, String title, String author) async {
       return Scaffold(
         appBar: AppBar(
             leading: InkWell(
@@ -162,7 +162,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                 },
                 child: Icon(Icons.arrow_back_ios_new_rounded,
                     color:
-                    Theme.of(context).appBarTheme.toolbarTextStyle!.color)),
+                        Theme.of(context).appBarTheme.toolbarTextStyle!.color)),
             backgroundColor: Theme.of(context).primaryColor),
         body: FutureBuilder<Response>(
           future: http.get(Uri.parse(url)),
@@ -172,54 +172,63 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
             }
 
             if (snapshot.connectionState == ConnectionState.done) {
-                String htmlToParse = snapshot.data!.body.toString();
-                //print(htmlToParse);
+              String mdToParse = snapshot.data!.body
+                  .toString()
+                  .split('{% include header.html %}')[1];
+              double width = MediaQuery.of(context).size.width;
+
               return ListView(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: html.HtmlWidget(
-                    // the first parameter (`html`) is required
-                    htmlToParse,
-
-                    // all other parameters are optional, a few notable params:
-
-                      factoryBuilder: () => widgetFactory,
-
-                    // specify custom styling for an element
-                    // see supported inline styling below
-                    customStylesBuilder: (element) {
-                      if (element.classes.contains('page-header')) {
-                        return {'font-size': '0px'};
-                      } else if (element.innerHtml.contains(" | Verdis Communications")) {
-                        return {
-                          'font-size': '28px',
-                          'Sizing': 'auto',
-                          'text-align': 'center',
-                          'align': 'center',
-                        };
-                      }
-
-                      return null;
-                    },
-
-                    // turn on selectable if required (it's disabled by default)
-                    isSelectable: true,
-
-                    // these callbacks are called when a complicated element is loading
-                    // or failed to render allowing the app to render progress indicator
-                    // and fallback widget
-                    onErrorBuilder: (context, element, error) => Text('$element error: $error'),
-                    onLoadingBuilder: (context, element, loadingProgress) => const CircularProgressIndicator(),
-
-                    // select the render mode for HTML body
-                    // by default, a simple `Column` is rendered
-                    // consider using `ListView` or `SliverList` for better performance
-                    renderMode: html.RenderMode.column,
-
-                    // set the default styling for text
-                    textStyle: const TextStyle(fontSize: 14),
-                ),
+                    padding: const EdgeInsets.fromLTRB(40, 20, 40, 10),
+                    child: Center(
+                        child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: (() {
+                          if ((width * 0.08) < 54) {
+                            return width * 0.08;
+                          } else {
+                            return 54.0;
+                          }
+                        }()),
+                      ),
+                    )),
+                  ),
+                  const Divider(
+                    height: 20,
+                    thickness: 2,
+                    indent: 50,
+                    endIndent: 50,
+                    color: Colors.black,
+                  ),
+                  const SizedBox(height: 15),
+                  Text(
+                    author,
+                    style: TextStyle(
+                        fontStyle: FontStyle.normal,
+                        fontWeight:
+                        FontWeight.normal, // regular weight
+                        color: (() {
+                          if (Theme.of(context).brightness ==
+                              Brightness.light) {
+                            return Colors.grey.shade600;
+                          } else {
+                            return Colors.white70;
+                          }
+                        }()),
+                        fontSize: 14.0),
+                    textAlign: TextAlign.center,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(38, 10, 38, 38),
+                    child: uzu.UzuMd(body: mdToParse),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(30),
+                    child: Image.asset('assets/images/banner.png'),
                   )
                 ],
               );
@@ -242,8 +251,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
     Widget blog = Scaffold(
       body: FutureBuilder<Response>(
-        future: http
-            .get(Uri.parse('https://free-republic-of-verdis.github.io/verdis-blog/feed.xml')),
+        future: http.get(Uri.parse(
+            'https://free-republic-of-verdis.github.io/verdis-blog/feed.xml')),
         builder: (BuildContext context, AsyncSnapshot<Response> snapshot) {
           if (snapshot.hasError) {
             return const Text("Something went wrong");
@@ -268,19 +277,19 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                         padding: const EdgeInsets.all(40),
                         child: Center(
                             child: Text(
-                              atomFeed.title!,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: (() {
-                                  if ((width * 0.08) < 54) {
-                                    return width * 0.08;
-                                  } else {
-                                    return 54.0;
-                                  }
-                                }()),
-                              ),
-                            )),
+                          atomFeed.title!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: (() {
+                              if ((width * 0.08) < 54) {
+                                return width * 0.08;
+                              } else {
+                                return 54.0;
+                              }
+                            }()),
+                          ),
+                        )),
                       );
                     }
 
@@ -322,7 +331,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                 style: TextStyle(
                                     fontStyle: FontStyle.normal,
                                     fontWeight:
-                                    FontWeight.normal, // regular weight
+                                        FontWeight.normal, // regular weight
                                     color: (() {
                                       if (Theme.of(context).brightness ==
                                           Brightness.light) {
@@ -340,7 +349,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                 style: TextStyle(
                                     fontStyle: FontStyle.normal,
                                     fontWeight:
-                                    FontWeight.normal, // regular weight
+                                        FontWeight.normal, // regular weight
                                     color: (() {
                                       if (Theme.of(context).brightness ==
                                           Brightness.light) {
@@ -360,14 +369,18 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                     TextSpan(
                                       text: 'Read More',
                                       style:
-                                      const TextStyle(color: Colors.blue),
+                                          const TextStyle(color: Colors.blue),
                                       recognizer: TapGestureRecognizer()
                                         ..onTap = () async {
                                           //launch(atomFeed.items![index - 1].links!.first.href!);
-                                          print("https://raw.githubusercontent.com/Free-Republic-of-Verdis/verdis-blog/main/_posts/${mdInputFormat.format(atomFeed.items![index - 1].updated!)}-${atomFeed.items![index - 1].links!.first.href!.split('/').last}.md");
-                                          var blogPost = await getBlogPage(atomFeed.items![index - 1].links!.first.href!);
+                                          var blogPost = await getBlogPage(
+                                              "https://raw.githubusercontent.com/Free-Republic-of-Verdis/verdis-blog/main/_posts/${mdInputFormat.format(atomFeed.items![index - 1].updated!)}-${atomFeed.items![index - 1].links!.first.href!.split('/').last}.md",
+                                              atomFeed.items![index - 1].title!,
+                                              "By ${atomFeed.items![index - 1].authors!.first.name!} - ${inputFormat.format(atomFeed.items![index - 1].updated!)}");
                                           Navigator.push(
-                                              context, MaterialPageRoute(builder: (_) => blogPost));
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (_) => blogPost));
                                         },
                                     ),
                                   ],
@@ -410,22 +423,22 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         padding: const EdgeInsets.fromLTRB(0, 25, 0, 0),
         child: ContactUs(
           avatarPadding: 30.0,
-            cardColor: Colors.white,
-            textColor: Colors.black,
-            logo: const AssetImage('assets/images/garv.jpg'),
-            avatarRadius: 100,
-            email: 'gshah.6110@gmail.com',
-            companyName: 'Garv Shah',
-            companyColor: Theme.of(context).appBarTheme.toolbarTextStyle!.color!,
-            dividerThickness: 2,
-            dividerColor: Colors.grey,
-            website: 'https://garv-shah.github.io',
-            githubUserName: 'garv-shah',
-            tagLine: 'Developer & Student',
-            taglineColor: Theme.of(context).appBarTheme.toolbarTextStyle!.color!,
+          cardColor: Colors.white,
+          textColor: Colors.black,
+          logo: const AssetImage('assets/images/garv.jpg'),
+          avatarRadius: 100,
+          email: 'gshah.6110@gmail.com',
+          companyName: 'Garv Shah',
+          companyColor: Theme.of(context).appBarTheme.toolbarTextStyle!.color!,
+          dividerThickness: 2,
+          dividerColor: Colors.grey,
+          website: 'https://garv-shah.github.io',
+          githubUserName: 'garv-shah',
+          tagLine: 'Developer & Student',
+          taglineColor: Theme.of(context).appBarTheme.toolbarTextStyle!.color!,
         ),
       ),
-      );
+    );
 
     Widget body;
 
@@ -497,8 +510,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                     FirebaseAuth.instance.signOut();
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                          builder: (context) => LandingPage()),
+                      MaterialPageRoute(builder: (context) => LandingPage()),
                     );
                   },
                 ),
@@ -570,39 +582,41 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                             final XFile? profileImage = await ImagePicker()
                                 .pickImage(source: ImageSource.gallery);
                             var bytes = await profileImage!.readAsBytes();
-                              setState(() {
-                                profile = CircleAvatar(
-                                  backgroundImage: MemoryImage(bytes),
-                                  radius: 25,
-                                );
-                              });
-                              if (userData['profileType'] != "") {
-                                await storage
-                                    .ref(
-                                        'profiles/${FirebaseAuth.instance.currentUser!.uid}/profile.${userData['profileType'].split('/')[1]}')
-                                    .delete();
-                              }
-                              firebase_storage.Reference ref =
-                                  firebase_storage.FirebaseStorage.instance.ref(
-                                      'profiles/${FirebaseAuth.instance.currentUser!.uid}/profile.${lookupMimeType('', headerBytes: bytes)!.split('/')[1]}');
-
-                              firebase_storage.SettableMetadata metadata =
-                                  firebase_storage.SettableMetadata(
-                                      contentType: lookupMimeType('',
-                                          headerBytes: bytes));
-
-                              await ref.putData(bytes, metadata);
-                              await fireStoreUserRef.update({
-                                'defaultProfile': false,
-                                'profileType':
-                                    lookupMimeType('', headerBytes: bytes)
-                              });
-                              await users.doc(FirebaseAuth.instance.currentUser!.uid).set(
-                                {
-                                  'imageUrl': await ref.getDownloadURL(),
-                                },
-                                SetOptions(merge: true),
+                            setState(() {
+                              profile = CircleAvatar(
+                                backgroundImage: MemoryImage(bytes),
+                                radius: 25,
                               );
+                            });
+                            if (userData['profileType'] != "") {
+                              await storage
+                                  .ref(
+                                      'profiles/${FirebaseAuth.instance.currentUser!.uid}/profile.${userData['profileType'].split('/')[1]}')
+                                  .delete();
+                            }
+                            firebase_storage.Reference ref =
+                                firebase_storage.FirebaseStorage.instance.ref(
+                                    'profiles/${FirebaseAuth.instance.currentUser!.uid}/profile.${lookupMimeType('', headerBytes: bytes)!.split('/')[1]}');
+
+                            firebase_storage.SettableMetadata metadata =
+                                firebase_storage.SettableMetadata(
+                                    contentType:
+                                        lookupMimeType('', headerBytes: bytes));
+
+                            await ref.putData(bytes, metadata);
+                            await fireStoreUserRef.update({
+                              'defaultProfile': false,
+                              'profileType':
+                                  lookupMimeType('', headerBytes: bytes)
+                            });
+                            await users
+                                .doc(FirebaseAuth.instance.currentUser!.uid)
+                                .set(
+                              {
+                                'imageUrl': await ref.getDownloadURL(),
+                              },
+                              SetOptions(merge: true),
+                            );
                           } else if (Platform.isMacOS) {
                             XTypeGroup typeGroup;
                             typeGroup = XTypeGroup(
@@ -639,7 +653,9 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                               'profileType':
                                   lookupMimeType('', headerBytes: bytes)
                             });
-                            await users.doc(FirebaseAuth.instance.currentUser!.uid).set(
+                            await users
+                                .doc(FirebaseAuth.instance.currentUser!.uid)
+                                .set(
                               {
                                 'imageUrl': await ref.getDownloadURL(),
                               },
@@ -697,9 +713,13 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                               'profileType': lookupMimeType('',
                                                   headerBytes: bytes)
                                             });
-                                            await users.doc(FirebaseAuth.instance.currentUser!.uid).set(
+                                            await users
+                                                .doc(FirebaseAuth
+                                                    .instance.currentUser!.uid)
+                                                .set(
                                               {
-                                                'imageUrl': await ref.getDownloadURL(),
+                                                'imageUrl':
+                                                    await ref.getDownloadURL(),
                                               },
                                               SetOptions(merge: true),
                                             );
@@ -750,9 +770,13 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                               'profileType': lookupMimeType('',
                                                   headerBytes: bytes)
                                             });
-                                            await users.doc(FirebaseAuth.instance.currentUser!.uid).set(
+                                            await users
+                                                .doc(FirebaseAuth
+                                                    .instance.currentUser!.uid)
+                                                .set(
                                               {
-                                                'imageUrl': await ref.getDownloadURL(),
+                                                'imageUrl':
+                                                    await ref.getDownloadURL(),
                                               },
                                               SetOptions(merge: true),
                                             );
@@ -863,9 +887,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                 );
 
                                 if (username != null) {
-                                  await fireStoreUserRef.update({
-                                    'username': username[0]
-                                  });
+                                  await fireStoreUserRef
+                                      .update({'username': username[0]});
                                   setState(() {});
                                 }
                               },
@@ -900,7 +923,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => const RegisterPage()),
+                                        builder: (context) =>
+                                            const RegisterPage()),
                                   );
                                   return const Text("Document does not exist");
                                 }
@@ -985,10 +1009,16 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                             }
                                           }));
 
-                                  return const SizedBox(width: 1, height: 1,);
+                                  return const SizedBox(
+                                    width: 1,
+                                    height: 1,
+                                  );
                                 }
 
-                                return const SizedBox(width: 1, height: 1,);
+                                return const SizedBox(
+                                  width: 1,
+                                  height: 1,
+                                );
                               },
                             ),
                           ),

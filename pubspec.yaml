@@ -61,7 +61,8 @@ dependencies:
   contactus: ^1.2.0
   jitsi_meet_wrapper_platform_interface: ^0.0.1
   jitsi_meet_wrapper: ^0.0.1
-  flutter_widget_from_html: ^0.8.4
+  uzu_flavored_markdown:
+    path: ./uzu_flavored_markdown
 
 dev_dependencies:
   flutter_test:
@@ -98,6 +99,7 @@ flutter:
     - assets/icon/app_icon.svg
     - assets/icon/banner.svg
     - assets/images/garv.jpg
+    - assets/images/banner.png
   fonts:
     - family: Cookie
       fonts:
