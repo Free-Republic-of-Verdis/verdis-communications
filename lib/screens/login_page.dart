@@ -68,7 +68,7 @@ class LoginPage extends StatelessWidget {
                       SizedBox(
                         width: 60,
                         child: SvgPicture.asset('assets/icon/app_icon.svg',
-                            semanticsLabel: 'Nova System logo'),
+                            semanticsLabel: 'Verdis Communications logo'),
                       ),
                       const SizedBox(width: 15),
                       SizedBox(
@@ -173,7 +173,7 @@ class LoginPage extends StatelessWidget {
           );
         },
       },
-      title: 'Nova System Login',
+      title: 'Verdis Communications',
       debugShowCheckedModeBanner: false,
       locale: const Locale('en'),
       localizationsDelegates: [

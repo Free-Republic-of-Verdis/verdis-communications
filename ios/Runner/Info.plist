@@ -32,7 +32,7 @@
 			</dict>
 		</array>
 		<key>CFBundleVersion</key>
-		<string>2</string>
+		<string>$(CURRENT_PROJECT_VERSION)</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSCameraUsageDescription</key>
@@ -41,6 +41,8 @@
 		<string>Verdis Communications needs access to your microphone for meetings.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>Verdis Communications requires the photo library to change profile pictures</string>
+		<key>NSCalendarsUsageDescription</key>
+		<string>Verdis Communications requires the calender to schedule events in meetings</string>
 		<key>RTCAppGroupIdentifier</key>
 		<string>group.com.garv.verdiscom</string>
 		<key>RTCScreenSharingExtension</key>

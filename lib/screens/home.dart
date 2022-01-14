@@ -228,10 +228,17 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                   Padding(
                     padding: const EdgeInsets.all(30),
                     child: (() {
+                      double width = MediaQuery.of(context).size.width;
+                      if (width > 140) {
+                        width = 140.0;
+                      }
                       if (Theme.of(context).brightness == Brightness.light) {
-                        return Image.asset('assets/images/banner.png');
+                        return Image.asset(
+                            'assets/images/banner.png',
+                          width: width - 60,
+                        );
                       } else {
-                        return Image.asset('assets/images/banner-dark.png');
+                        return Image.asset('assets/images/banner-dark.png', width: width - 60);
                       }
                     }()),
                   )
@@ -814,7 +821,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                             Map<String, dynamic> data =
                                 snapshot.data!.data() as Map<String, dynamic>;
 
-                            userData = data; //nee
+                            userData = data;
 
                             WidgetsBinding.instance!.addPostFrameCallback((_) =>
                                 Future.delayed(const Duration(milliseconds: 0),
