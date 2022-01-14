@@ -19,7 +19,7 @@ final providerConfigs = [
   const EmailProviderConfiguration(),
   const GoogleProviderConfiguration(
       clientId:
-          '9939219864-s86mneko4kqcpfn1uqu7ka8eft6b09vr.apps.googleusercontent.com'),
+          '686272364376-ppii4j9to3gumk7t7tbvmo7f7ug7j3k6.apps.googleusercontent.com'),
   const AppleProviderConfiguration(),
 ];
 
@@ -78,7 +78,7 @@ class LoginPage extends StatelessWidget {
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Text(
-                              "The Nova System",
+                              "Verdis Communications",
                               style: TextStyle(
                                   fontWeight: FontWeight.bold, fontSize: 32),
                             ),
@@ -96,8 +96,8 @@ class LoginPage extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   action == AuthAction.signIn
-                      ? 'Welcome to The Nova System! Please sign in to continue.'
-                      : 'Welcome to The Nova System! Please create an account to continue',
+                      ? 'Welcome to Verdis Communications! Please sign in to continue.'
+                      : 'Welcome to Verdis Communications! Please create an account to continue',
                 ),
               );
             },

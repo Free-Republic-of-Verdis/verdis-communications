@@ -20,6 +20,7 @@ class ConfrenceService {
 
   connect() async {
     JitsiMeetingOptions options = JitsiMeetingOptions(
+        serverUrl: "https://meet.vrdgov.org",
         userAvatarUrl: details.avatarUrl,
         roomNameOrUrl: details.room,
         userEmail: details.emailID,
@@ -30,6 +31,6 @@ class ConfrenceService {
   }
 
   urlLaunch() {
-    launch('https://meet.jit.si/${details.room}');
+    launch('https://meet.vrdgov.org/${details.room}');
   }
 }
