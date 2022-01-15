@@ -133,8 +133,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       if (user != null) {
         loggedInUser = user;
         setState(() {
-          username = loggedInUser.displayName!;
-          email = loggedInUser.email!;
+          username = loggedInUser.displayName ?? loggedInUser.providerData[0].displayName ?? loggedInUser.providerData[1].displayName!;
+          email = loggedInUser.email ?? loggedInUser.providerData[0].email ?? loggedInUser.providerData[1].email!;
         });
       }
     } catch (e) {
