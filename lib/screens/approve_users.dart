@@ -124,6 +124,7 @@ class _ApproveUsersPageState extends State<ApproveUsersPage> {
 
             if (snapshot.connectionState ==
                 ConnectionState.active) {
+
               Map<String, dynamic> data =
               snapshot.data!.data() as Map<String, dynamic>;
 
@@ -235,6 +236,10 @@ class _ApproveUsersPageState extends State<ApproveUsersPage> {
           }
 
           if (snapshot.connectionState == ConnectionState.active) {
+            snapshot.data!.sort((object1, object2) {
+              return object2.createdAt!.compareTo(object1.createdAt!);
+            });
+
             return Padding(
               padding: const EdgeInsets.fromLTRB(8.0, 16.0, 8.0, 16.0),
               child: ListView.builder(
