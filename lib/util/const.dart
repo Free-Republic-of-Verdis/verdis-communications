@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
 
 class Constants {
-  static String appName = "Nova System";
+  static String appName = "Verdis Communications";
 
   static const regularHeading = TextStyle(
       fontSize: 18.0, fontWeight: FontWeight.w600, color: Colors.black);

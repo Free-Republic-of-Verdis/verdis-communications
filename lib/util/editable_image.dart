@@ -113,6 +113,13 @@ class EditableImage extends StatelessWidget {
                     onPressed: () async {
                       profileImage = await ImagePicker()
                           .pickImage(source: ImageSource.gallery);
+
+                      bytes = await profileImage!.readAsBytes();
+                      if (bytes.isEmpty) return;
+
+                      onChange(bytes);
+
+                      Navigator.pop(context);
                     },
                     child: const Text('Pick From Gallery'),
                   ),
@@ -120,17 +127,19 @@ class EditableImage extends StatelessWidget {
                     onPressed: () async {
                       profileImage = await ImagePicker()
                           .pickImage(source: ImageSource.camera);
+
+                      bytes = await profileImage!.readAsBytes();
+                      if (bytes.isEmpty) return;
+
+                      onChange(bytes);
+
+                      Navigator.pop(context);
                     },
                     child: const Text('Take A New Picture'),
                   ),
                 ]);
           });
     }
-
-    bytes = await profileImage!.readAsBytes();
-    if (bytes.isEmpty) return;
-
-    onChange(bytes);
   }
 
   @override

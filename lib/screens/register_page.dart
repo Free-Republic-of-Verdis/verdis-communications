@@ -1,3 +1,4 @@
+import 'package:verdiscom/screens/landing_page.dart';
 import 'package:verdiscom/util/const.dart';
 import 'package:verdiscom/widgets/custom_btn.dart';
 import 'package:verdiscom/widgets/custom_input.dart';
@@ -104,15 +105,18 @@ class _RegisterPageState extends State<RegisterPage> {
         'defaultProfile': true,
         'profileType': '',
         'superNova': false,
-        'username': _registerUsername
+        'username': _registerUsername,
+        'approved': false,
+        'role': 'user'
       },
           SetOptions(merge: true),)
           .then((value) => print("User Added"))
           .catchError((error) => print("Failed to add user: $error"));
+
       Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => const Home()),
+            builder: (context) => LandingPage()),
       );
     }
   }

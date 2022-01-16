@@ -26,6 +26,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:verdiscom/util/buy_me_a_coffee/buy_me_a_coffee_widget.dart';
 import 'package:adaptive_dialog/adaptive_dialog.dart';
 import 'package:verdiscom/util/contactus.dart';
+import 'package:verdiscom/screens/approve_users.dart';
 import 'package:uzu_flavored_markdown/uzu_flavored_markdown.dart' as uzu;
 import 'package:http/http.dart' as http;
 
@@ -55,37 +56,6 @@ http.Client client = http.Client();
 String username = 'User';
 String email = 'user@example.com';
 late User loggedInUser;
-
-/*class MyWidgetFactory extends html.WidgetFactory {
-  @override
-  void parse(html.BuildMetadata meta) {
-    if (meta.element.innerHtml.contains(" | Verdis Communications")) {
-      meta.register(html.BuildOp(
-        onWidgets: (meta, widgets) => html.listOrNull(
-          widgets.first.wrapWith(
-                (context, child) => Column(
-                  children: [
-                    Center(
-              child: child,
-            ),
-                    const SizedBox(height: 20),
-                    const Divider(
-                      height: 20,
-                      thickness: 2,
-                      indent: 20,
-                      endIndent: 20,
-                      color: Colors.black,
-                    ),
-                    const SizedBox(height: 15),
-                  ],
-                ),
-          ),
-        ),
-      ));
-    }
-    return super.parse(meta);
-  }
-}*/
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -514,6 +484,41 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                   onTap: () {
                     launch('https://github.com/garv-shah');
                     Navigator.pop(context);
+                  },
+                ),
+                FutureBuilder<DocumentSnapshot>( //kibbu
+                  future: users
+                      .doc(FirebaseAuth.instance.currentUser!.uid).get(),
+                  builder: (BuildContext context,
+                      AsyncSnapshot<DocumentSnapshot> snapshot) {
+                    if (snapshot.hasError) {
+                      return const Text("Something went wrong");
+                    }
+
+                    if (snapshot.hasData && !snapshot.data!.exists) {
+                      return const Text("Document does not exist");
+                    }
+
+                    if (snapshot.connectionState ==
+                        ConnectionState.done) {
+                      Map<String, dynamic> data =
+                      snapshot.data!.data() as Map<String, dynamic>;
+
+                      if (data['role'] == "admin") {
+                        return ListTile(
+                          title: const Text('Approve Users'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                                context, MaterialPageRoute(builder: (_) => const ApproveUsersPage()));
+                          },
+                        );
+                      } else {
+                        return const SizedBox();
+                      }
+                    }
+
+                    return const SizedBox();
                   },
                 ),
                 ListTile(

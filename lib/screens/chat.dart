@@ -237,8 +237,8 @@ class _ChatPageState extends State<ChatPage> {
             if (!kIsWeb) {
               return Padding(
                 padding: const EdgeInsets.only(right: 20.0),
-                child: GestureDetector(
-                  onTap: () async {
+                child: IconButton(
+                  onPressed: () async {
                     await ConfrenceService(
                         instance: model.Confrence(
                             avatarUrl: userData['imageUrl'],
@@ -248,7 +248,7 @@ class _ChatPageState extends State<ChatPage> {
                             room: widget.room.id))
                         .connect();
                   },
-                  child: const Icon(
+                  icon: const Icon(
                     Icons.call,
                     size: 30,
                     color: Colors.green,

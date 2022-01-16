@@ -54,10 +54,9 @@ class LandingPage extends StatelessWidget {
                   // user not logged in, head to login
                   return LoginPage();
                 } else {
-                  return FutureBuilder<DocumentSnapshot>(
-                    future: users
-                        .doc(FirebaseAuth.instance.currentUser!.uid)
-                        .get(),
+                  return StreamBuilder<DocumentSnapshot>(
+                    stream: users
+                        .doc(FirebaseAuth.instance.currentUser!.uid).snapshots(),
                     builder: (BuildContext context,
                         AsyncSnapshot<DocumentSnapshot> snapshot) {
                       if (snapshot.hasError) {
@@ -70,8 +69,49 @@ class LandingPage extends StatelessWidget {
                       }
 
                       if (snapshot.connectionState ==
-                          ConnectionState.done) {
-                        return const Home();
+                          ConnectionState.active) {
+                        Map<String, dynamic> data =
+                        snapshot.data!.data() as Map<String, dynamic>;
+
+                        if (data['approved'] == true) {
+                          return const Home();
+                        } else {
+                          return Container(
+                            decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [Color(0xFF404e8f), Color(0xFF011569)])),
+                            child: const Scaffold(
+                              backgroundColor: Colors.transparent,
+                              body: SafeArea(
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(60.0),
+                                      child: Card(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(10),
+                                          ),
+                                        ),
+                                        elevation: 10,
+                                        child: Padding(
+                                          padding: EdgeInsets.all(24.0),
+                                          child: Text(
+                                            "Please wait for your account to be approved by an administrator",
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
                       }
 
                       return Container(
