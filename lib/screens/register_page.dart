@@ -95,23 +95,41 @@ class _RegisterPageState extends State<RegisterPage> {
       },
         SetOptions(merge: true),);
 
-      // The String was null, user is logged in.
-      users
-          .doc(FirebaseAuth.instance.currentUser!.uid).set({
-        'email': FirebaseAuth.instance.currentUser!.email,
-        'USD': 100,
-        'assets': [],
-        'badges': [],
-        'defaultProfile': true,
-        'profileType': '',
-        'superNova': false,
-        'username': _registerUsername,
-        'approved': false,
-        'role': 'user'
-      },
+      if (FirebaseAuth.instance.currentUser!.email?.split("@")[1] == "vrdgov.org") {
+        users
+            .doc(FirebaseAuth.instance.currentUser!.uid).set({
+          'email': FirebaseAuth.instance.currentUser!.email,
+          'USD': 100,
+          'assets': [],
+          'badges': [],
+          'defaultProfile': true,
+          'profileType': '',
+          'superNova': false,
+          'username': _registerUsername,
+          'approved': true,
+          'role': 'user'
+        },
           SetOptions(merge: true),)
-          .then((value) => print("User Added"))
-          .catchError((error) => print("Failed to add user: $error"));
+            .then((value) => print("User Added"))
+            .catchError((error) => print("Failed to add user: $error"));
+      } else {
+        users
+            .doc(FirebaseAuth.instance.currentUser!.uid).set({
+          'email': FirebaseAuth.instance.currentUser!.email,
+          'USD': 100,
+          'assets': [],
+          'badges': [],
+          'defaultProfile': true,
+          'profileType': '',
+          'superNova': false,
+          'username': _registerUsername,
+          'approved': false,
+          'role': 'user'
+        },
+          SetOptions(merge: true),)
+            .then((value) => print("User Added"))
+            .catchError((error) => print("Failed to add user: $error"));
+      }
 
       Navigator.push(
         context,
