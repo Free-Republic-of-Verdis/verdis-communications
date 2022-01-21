@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -55,13 +56,12 @@ class _RoomsPageState extends State<RoomsPage> {
 
   Widget _buildAvatar(types.Room room) {
     var color = Colors.transparent;
+    types.User otherUser = room.users.firstWhere(
+          (u) => u.id != _user!.uid,
+    );
 
     if (room.type == types.RoomType.direct) {
       try {
-        final otherUser = room.users.firstWhere(
-          (u) => u.id != _user!.uid,
-        );
-
         color = getUserAvatarNameColor(otherUser);
       } catch (e) {
         // Do nothing if other user is not found
@@ -82,64 +82,202 @@ class _RoomsPageState extends State<RoomsPage> {
         leading: Hero(
             tag: name,
             child: (() {
-              if (hasImage == false) {
-                profile[room] = CircleAvatar(
-                  backgroundColor: color,
-                  backgroundImage: null,
-                  radius: 20,
-                  child: !hasImage
-                      ? Text(
-                    name.isEmpty ? '' : name[0].toUpperCase(),
-                    style: const TextStyle(color: Colors.white),
-                  )
-                      : null,
-                );
-
-                return profile[room];
-              }
-        if (room.imageUrl!.split(".").last == 'svg') {
-          profile[room] = ClipOval(
-            child: SvgPicture.network(
-              room.imageUrl!,
-              width: 40,
-              height: 40,
-              semanticsLabel: 'profile picture',
-              placeholderBuilder: (BuildContext context) => const SizedBox(
+              if (room.type == types.RoomType.direct) {
+                profile[room] = SizedBox(
                   height: 40,
                   width: 40,
-                  child: Center(child: SizedBox(width: 30, height: 30, child: CircularProgressIndicator()))),
-            ),
-          );
+                  child: Stack(
+                    children: [
 
-          return profile[room];
-        } else {
-          profile[room] = CachedNetworkImage(
-            imageUrl: room.imageUrl!,
-            fit: BoxFit.fill,
-            width: 40,
-            height: 40,
-            imageBuilder: (context, imageProvider) => CircleAvatar(
-              radius: 20,
-              backgroundImage: imageProvider,
-              backgroundColor: hasImage ? Colors.transparent : color,
-              child: !hasImage
-                  ? Text(
-                name.isEmpty ? '' : name[0].toUpperCase(),
-                style: const TextStyle(color: Colors.white),
-              )
-                  : null,
-            ),
-            placeholder: (context, url) => const SizedBox(
-                height: 40,
-                width: 40,
-                child: Center(child: SizedBox(width: 30, height: 30, child: CircularProgressIndicator()))),
-            errorWidget: (context, url, error) => const SizedBox(
-                height: 40, width: 40, child: Icon(Icons.error)),
-          );
+                      /// Builds main image.
+                      /// For example, profile picture.
+                      (() {
+                        if (hasImage == false) {
+                          return CircleAvatar(
+                            backgroundColor: color,
+                            backgroundImage: null,
+                            radius: 20,
+                            child: !hasImage
+                                ? Text(
+                              name.isEmpty ? '' : name[0].toUpperCase(),
+                              style: const TextStyle(color: Colors.white),
+                            )
+                                : null,
+                          );
+                        }
+                        if (room.imageUrl!.split(".").last == 'svg') {
+                          return ClipOval(
+                            child: SvgPicture.network(
+                              room.imageUrl!,
+                              width: 40,
+                              height: 40,
+                              semanticsLabel: 'profile picture',
+                              placeholderBuilder: (BuildContext context) =>
+                              const SizedBox(
+                                  height: 40,
+                                  width: 40,
+                                  child: Center(child: SizedBox(width: 30,
+                                      height: 30,
+                                      child: CircularProgressIndicator()))),
+                            ),
+                          );
+                        } else {
+                          return CachedNetworkImage(
+                            imageUrl: room.imageUrl!,
+                            fit: BoxFit.fill,
+                            width: 40,
+                            height: 40,
+                            imageBuilder: (context, imageProvider) =>
+                                CircleAvatar(
+                                  radius: 20,
+                                  backgroundImage: imageProvider,
+                                  backgroundColor: hasImage
+                                      ? Colors.transparent
+                                      : color,
+                                  child: !hasImage
+                                      ? Text(
+                                    name.isEmpty ? '' : name[0].toUpperCase(),
+                                    style: const TextStyle(color: Colors.white),
+                                  )
+                                      : null,
+                                ),
+                            placeholder: (context, url) =>
+                            const SizedBox(
+                                height: 40,
+                                width: 40,
+                                child: Center(child: SizedBox(width: 30,
+                                    height: 30,
+                                    child: CircularProgressIndicator()))),
+                            errorWidget: (context, url, error) =>
+                            const SizedBox(
+                                height: 40,
+                                width: 40,
+                                child: Icon(Icons.error)),
+                          );
+                        }
+                      }()),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: StreamBuilder<DocumentSnapshot>(
+                          stream: users
+                              .doc(otherUser.id).snapshots(),
+                          builder: (BuildContext context,
+                              AsyncSnapshot<DocumentSnapshot> snapshot) {
+                            if (snapshot.hasError) {
+                              return const Text("Something went wrong");
+                            }
 
-          return profile[room];
-        }
-      } ()),
+                            if (snapshot.hasData &&
+                                !snapshot.data!.exists) {
+                              return const Text("Document does not exist");
+                            }
+
+                            if (snapshot.connectionState ==
+                                ConnectionState.active) {
+
+                              Map<String, dynamic> data =
+                              snapshot.data!.data() as Map<String, dynamic>;
+
+                              if (data['status'] == true) {
+                                return Container(
+                                  height: 10,
+                                  width: 10,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.green,
+                                    border: const Border(),
+                                    shape: BoxShape.circle,
+                                  ),
+                                );
+                              } else {
+                                return Container(
+                                  height: 10,
+                                  width: 10,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    border: Border(),
+                                    shape: BoxShape.circle,
+                                  ),
+                                );
+                              }
+                            }
+
+                            return const SizedBox();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+                return profile[room];
+              } else {
+                if (hasImage == false) {
+                  profile[room] = CircleAvatar(
+                    backgroundColor: color,
+                    backgroundImage: null,
+                    radius: 20,
+                    child: !hasImage
+                        ? Text(
+                      name.isEmpty ? '' : name[0].toUpperCase(),
+                      style: const TextStyle(color: Colors.white),
+                    )
+                        : null,
+                  );
+                  return profile[room];
+                }
+                if (room.imageUrl!.split(".").last == 'svg') {
+                  profile[room] = ClipOval(
+                    child: SvgPicture.network(
+                      room.imageUrl!,
+                      width: 40,
+                      height: 40,
+                      semanticsLabel: 'profile picture',
+                      placeholderBuilder: (BuildContext context) =>
+                      const SizedBox(
+                          height: 40,
+                          width: 40,
+                          child: Center(child: SizedBox(width: 30,
+                              height: 30,
+                              child: CircularProgressIndicator()))),
+                    ),
+                  );
+                  return profile[room];
+                } else {
+                  profile[room] = CachedNetworkImage(
+                    imageUrl: room.imageUrl!,
+                    fit: BoxFit.fill,
+                    width: 40,
+                    height: 40,
+                    imageBuilder: (context, imageProvider) =>
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundImage: imageProvider,
+                          backgroundColor: hasImage
+                              ? Colors.transparent
+                              : color,
+                          child: !hasImage
+                              ? Text(
+                            name.isEmpty ? '' : name[0].toUpperCase(),
+                            style: const TextStyle(color: Colors.white),
+                          )
+                              : null,
+                        ),
+                    placeholder: (context, url) =>
+                    const SizedBox(
+                        height: 40,
+                        width: 40,
+                        child: Center(child: SizedBox(width: 30,
+                            height: 30,
+                            child: CircularProgressIndicator()))),
+                    errorWidget: (context, url, error) =>
+                    const SizedBox(
+                        height: 40,
+                        width: 40,
+                        child: Icon(Icons.error)),
+                  );
+                  return profile[room];
+                }
+              }
+            } ()),
       ),
         title: Hero(
             tag: name + " name",
@@ -233,6 +371,7 @@ class _RoomsPageState extends State<RoomsPage> {
 
                     return InkWell(
                       onTap: () {
+                        print(profile[room]);
                         Navigator.push(
                           context,
                           PageRouteBuilder(

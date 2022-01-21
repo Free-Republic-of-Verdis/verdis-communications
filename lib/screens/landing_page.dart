@@ -6,11 +6,14 @@ import 'package:verdiscom/screens/login_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 CollectionReference users = FirebaseFirestore.instance.collection('users');
 
 class LandingPage extends StatelessWidget {
   final Future<FirebaseApp> _initialization = Firebase.initializeApp();
+
+  LandingPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +31,6 @@ class LandingPage extends StatelessWidget {
 
         // Connection Initialized - Firebase App is running
         if (snapshot.connectionState == ConnectionState.done) {
-
           // StreamBuilder can check the login state live
           return StreamBuilder(
             stream: FirebaseAuth.instance.authStateChanges(),
@@ -44,34 +46,32 @@ class LandingPage extends StatelessWidget {
 
               // Connection state active - Do the user login check inside the
               // if statement
-              if(streamSnapshot.connectionState == ConnectionState.active) {
-
+              if (streamSnapshot.connectionState == ConnectionState.active) {
                 // Get the user
                 Object? _user = streamSnapshot.data;
 
                 // If the user is null, we're not logged in
-                if(_user == null) {
+                if (_user == null) {
                   // user not logged in, head to login
                   return LoginPage();
                 } else {
                   return StreamBuilder<DocumentSnapshot>(
                     stream: users
-                        .doc(FirebaseAuth.instance.currentUser!.uid).snapshots(),
+                        .doc(FirebaseAuth.instance.currentUser!.uid)
+                        .snapshots(),
                     builder: (BuildContext context,
                         AsyncSnapshot<DocumentSnapshot> snapshot) {
                       if (snapshot.hasError) {
                         return const Text("Something went wrong");
                       }
 
-                      if (snapshot.hasData &&
-                          !snapshot.data!.exists) {
+                      if (snapshot.hasData && !snapshot.data!.exists) {
                         return const RegisterPage();
                       }
 
-                      if (snapshot.connectionState ==
-                          ConnectionState.active) {
+                      if (snapshot.connectionState == ConnectionState.active) {
                         Map<String, dynamic> data =
-                        snapshot.data!.data() as Map<String, dynamic>;
+                            snapshot.data!.data() as Map<String, dynamic>;
 
                         if (data['approved'] == true) {
                           return const Home();
@@ -81,7 +81,10 @@ class LandingPage extends StatelessWidget {
                                 gradient: LinearGradient(
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
-                                    colors: [Color(0xFF404e8f), Color(0xFF011569)])),
+                                    colors: [
+                                  Color(0xFF404e8f),
+                                  Color(0xFF011569)
+                                ])),
                             child: const Scaffold(
                               backgroundColor: Colors.transparent,
                               body: SafeArea(
@@ -119,7 +122,10 @@ class LandingPage extends StatelessWidget {
                             gradient: LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
-                                colors: [Color(0xFF404e8f), Color(0xFF011569)])),
+                                colors: [
+                              Color(0xFF404e8f),
+                              Color(0xFF011569)
+                            ])),
                         child: const Scaffold(
                           backgroundColor: Colors.transparent,
                           body: Center(

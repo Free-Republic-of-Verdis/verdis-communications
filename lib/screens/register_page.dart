@@ -90,7 +90,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
       rooms
           .doc('verdiscomglobal').set({
-        'userIds': userIds,
+        'userIds': userIds.toSet().toList(),
         'userRoles': userRoles
       },
         SetOptions(merge: true),);
@@ -106,7 +106,8 @@ class _RegisterPageState extends State<RegisterPage> {
         'superNova': false,
         'username': _registerUsername,
         'approved': false,
-        'role': 'user'
+        'role': 'user',
+        'status': false
       },
           SetOptions(merge: true),)
           .then((value) => print("User Added"))

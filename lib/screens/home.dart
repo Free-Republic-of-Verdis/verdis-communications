@@ -28,7 +28,14 @@ import 'package:adaptive_dialog/adaptive_dialog.dart';
 import 'package:verdiscom/util/contactus.dart';
 import 'package:verdiscom/screens/approve_users.dart';
 import 'package:uzu_flavored_markdown/uzu_flavored_markdown.dart' as uzu;
-import 'package:http/http.dart' as http;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+import 'package:verdiscom/util/util.dart';
+import 'dart:convert';
+import 'package:flutter_firebase_chat_core/flutter_firebase_chat_core.dart';
+
+import 'chat.dart';
 
 firebase_storage.FirebaseStorage storage =
     firebase_storage.FirebaseStorage.instance;
@@ -57,6 +64,234 @@ String username = 'User';
 String email = 'user@example.com';
 late User loggedInUser;
 
+FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+FlutterLocalNotificationsPlugin();
+
+Future<void> registerNotification(BuildContext context) async {
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    announcement: true,
+    badge: true,
+    carPlay: true,
+    criticalAlert: true,
+    provisional: true,
+    sound: true,
+  );
+
+  print('User granted permission: ${settings.authorizationStatus}');
+
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    RemoteNotification? notification = message.notification;
+    AndroidNotification? android = message.notification?.android;
+
+    if (notification != null && android != null) {
+      flutterLocalNotificationsPlugin.show(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              notification.title!,
+              notification.body!,
+              icon: 'launch_background',
+            ),
+          ));
+    }
+  });
+
+  Map<dynamic, dynamic> notificationProfile = {};
+
+  Widget _buildAvatar(types.Room room) {
+    var color = Colors.transparent;
+
+    if (room.type == types.RoomType.direct) {
+      try {
+        final otherUser = room.users.firstWhere(
+              (u) => u.id != FirebaseAuth.instance.currentUser!.uid,
+        );
+
+        color = getUserAvatarNameColor(otherUser);
+      } catch (e) {
+        // Do nothing if other user is not found
+      }
+    }
+
+    final hasImage = room.imageUrl != null;
+    final name = room.name ?? '';
+
+    return Card(
+        elevation: 4,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(
+            Radius.circular(10),
+          ),
+        ),
+        child: ListTile(
+          leading: Hero(
+            tag: name,
+            child: (() {
+              if (hasImage == false) {
+                notificationProfile[room] = CircleAvatar(
+                  backgroundColor: color,
+                  backgroundImage: null,
+                  radius: 20,
+                  child: !hasImage
+                      ? Text(
+                    name.isEmpty ? '' : name[0].toUpperCase(),
+                    style: const TextStyle(color: Colors.white),
+                  )
+                      : null,
+                );
+
+                return notificationProfile[room];
+              }
+              if (room.imageUrl!.split(".").last == 'svg') {
+                notificationProfile[room] = ClipOval(
+                  child: SvgPicture.network(
+                    room.imageUrl!,
+                    width: 40,
+                    height: 40,
+                    semanticsLabel: 'notificationProfile picture',
+                    placeholderBuilder: (BuildContext context) => const SizedBox(
+                        height: 40,
+                        width: 40,
+                        child: Center(child: SizedBox(width: 30, height: 30, child: CircularProgressIndicator()))),
+                  ),
+                );
+
+                return notificationProfile[room];
+              } else {
+                notificationProfile[room] = CachedNetworkImage(
+                  imageUrl: room.imageUrl!,
+                  fit: BoxFit.fill,
+                  width: 40,
+                  height: 40,
+                  imageBuilder: (context, imageProvider) => CircleAvatar(
+                    radius: 20,
+                    backgroundImage: imageProvider,
+                    backgroundColor: hasImage ? Colors.transparent : color,
+                    child: !hasImage
+                        ? Text(
+                      name.isEmpty ? '' : name[0].toUpperCase(),
+                      style: const TextStyle(color: Colors.white),
+                    )
+                        : null,
+                  ),
+                  placeholder: (context, url) => const SizedBox(
+                      height: 40,
+                      width: 40,
+                      child: Center(child: SizedBox(width: 30, height: 30, child: CircularProgressIndicator()))),
+                  errorWidget: (context, url, error) => const SizedBox(
+                      height: 40, width: 40, child: Icon(Icons.error)),
+                );
+
+                return notificationProfile[room];
+              }
+            } ()),
+          ),
+          title: Hero(
+              tag: name + " name",
+              child: Material(
+                  color: Colors.transparent,
+                  child: Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 18.0,
+                    ),
+                  ))),
+        )
+    );
+  }
+
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (c, a1, a2) => StreamBuilder<types.Room>(
+          stream: FirebaseChatCore.instance.room(message.data['roomID']),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.active) {
+              //print(snapshot.data!);
+            }
+
+            if (!snapshot.hasData) {
+              return const Center(
+                child: SizedBox(
+                  height: 40,
+                  width: 40,
+                  child: CircularProgressIndicator()
+                )
+              );
+            }
+
+            types.Room room = snapshot.data!;
+
+            _buildAvatar(room);
+
+            if (room.id == message.data['roomID']) {
+              return ChatPage(
+                backupName: "error",
+                room: room,
+                avatar: notificationProfile[room],
+              );
+            }
+
+            return const Center(
+                child: SizedBox(
+                    height: 40,
+                    width: 40,
+                    child: CircularProgressIndicator()
+                )
+            );
+          },
+        ),
+        transitionsBuilder: (c, anim, a2, child) =>
+            FadeTransition(opacity: anim, child: child),
+        transitionDuration: const Duration(milliseconds: 150),
+      ),
+    );
+  });
+
+  messaging.getToken().then((token) async {
+    if (token == null) {
+      throw "push token is null";
+    }
+
+    var userData = users.doc(FirebaseAuth.instance.currentUser!.uid).get();
+    var userMap = (await userData).data()! as Map;
+    List pushToken = [];
+
+    if (userMap['pushToken'] == null) {
+      pushToken = [token];
+    } else {
+      pushToken.addAll(userMap['pushToken']);
+      pushToken.add(token);
+    }
+
+    Function eq = const ListEquality().equals;
+
+    pushToken = pushToken.toSet().toList();
+
+    if (!eq(pushToken, userMap['pushToken'])) {
+      users.doc(FirebaseAuth.instance.currentUser!.uid).set(
+        {
+          'pushToken': pushToken,
+        },
+        SetOptions(merge: true),
+      );
+    }
+  }).catchError((err) {
+    edgeAlert(context,
+        title: 'Something Went Wrong',
+        description: err.toString(),
+        gravity: Gravity.bottom,
+        icon: Icons.error,
+        backgroundColor: Colors.deepPurple[900]);
+  });
+}
+
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
 
@@ -64,8 +299,7 @@ class Home extends StatefulWidget {
   _HomeState createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> with TickerProviderStateMixin {
-  //final html.WidgetFactory widgetFactory = MyWidgetFactory();
+class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindingObserver {
 
   @override
   void dispose() {
@@ -91,10 +325,31 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
   @override
   void initState() {
+    registerNotification(context);
     client = http.Client();
     super.initState();
     getCurrentUser();
     controller = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance?.addObserver(this);
+    setStatus(true);
+  }
+
+  void setStatus(bool status) {
+    users.doc(FirebaseAuth.instance.currentUser!.uid).set(
+      {
+        'status': status,
+      },
+      SetOptions(merge: true),
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      setStatus(true);
+    } else {
+      setStatus(false);
+    }
   }
 
   void getCurrentUser() async {
@@ -523,7 +778,14 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                 ),
                 ListTile(
                   title: const Text('Logout'),
-                  onTap: () {
+                  onTap: () async {
+                    await users.doc(FirebaseAuth.instance.currentUser!.uid).set(
+                      {
+                        'status': false,
+                        'pushToken': []
+                      },
+                      SetOptions(merge: true),
+                    );
                     FirebaseAuth.instance.signOut();
                     Navigator.push(
                       context,

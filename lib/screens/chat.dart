@@ -16,10 +16,21 @@ import 'package:mime/mime.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:verdiscom/service/confrenceservice.dart';
+import 'package:verdiscom/service/confrence_service.dart';
 import 'package:verdiscom/model/confrence.dart' as model;
+import 'package:cloud_functions/cloud_functions.dart';
 
 import 'home.dart';
+
+Future<void> sendNotification(String message, List idsTo, String username, String roomID) async {
+  HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('sendNotification');
+  await callable.call(<String, dynamic>{
+    'message': message,
+    'idsTo': idsTo,
+    'username': username,
+    'roomID': roomID
+  });
+}
 
 class ChatPage extends StatefulWidget {
   const ChatPage({Key? key, required this.room, required this.avatar, required this.backupName})
@@ -106,6 +117,54 @@ class _ChatPageState extends State<ChatPage> {
 
         FirebaseChatCore.instance.sendMessage(message, widget.room.id);
         _setAttachmentUploading(false);
+
+        CollectionReference rooms = FirebaseFirestore.instance.collection('rooms');
+        CollectionReference users = FirebaseFirestore.instance.collection('users');
+        var roomData = rooms.doc(widget.room.id).get();
+        var roomMap = (await roomData).data()! as Map;
+        roomMap['updatedAt'] = Timestamp.now();
+
+        // sends notifications
+        if (widget.room.type == types.RoomType.direct) {
+          print("room is direct");
+          List userList = [];
+          userList.addAll(roomMap['userIds']);
+          userList.remove(FirebaseAuth.instance.currentUser!.uid);
+
+          print("userList is ${userList}");
+
+          var userData = users.doc(userList.first).get();
+          var userMap = (await userData).data()! as Map;
+
+          if (userMap['status'] == false) {
+            print("sending notification");
+            await sendNotification("Sent a file", userList, username, widget.room.id);
+          }
+        } else if (widget.room.type == types.RoomType.group) {
+          print("room is group");
+          List userList = [];
+          List finalUserList = [];
+          userList.addAll(roomMap['userIds']);
+          userList = userList.toSet().toList();
+          userList.remove(FirebaseAuth.instance.currentUser!.uid);
+
+          for (String userID in userList) {
+            var userData = users.doc(userID).get();
+            var userMap = (await userData).data()! as Map;
+
+            if (userMap['status'] == false) {
+              finalUserList.add(userID);
+            }
+          }
+
+          print("userList is $finalUserList");
+
+          if (finalUserList.isNotEmpty) {
+            print("sending notification");
+            await sendNotification(
+                "Sent a file", finalUserList, "$username - ${widget.room.name!}", widget.room.id);
+          }
+        }
       } finally {
         _setAttachmentUploading(false);
       }
@@ -145,6 +204,54 @@ class _ChatPageState extends State<ChatPage> {
           widget.room.id,
         );
         _setAttachmentUploading(false);
+
+        CollectionReference rooms = FirebaseFirestore.instance.collection('rooms');
+        CollectionReference users = FirebaseFirestore.instance.collection('users');
+        var roomData = rooms.doc(widget.room.id).get();
+        var roomMap = (await roomData).data()! as Map;
+        roomMap['updatedAt'] = Timestamp.now();
+
+        // sends notifications
+        if (widget.room.type == types.RoomType.direct) {
+          print("room is direct");
+          List userList = [];
+          userList.addAll(roomMap['userIds']);
+          userList.remove(FirebaseAuth.instance.currentUser!.uid);
+
+          print("userList is ${userList}");
+
+          var userData = users.doc(userList.first).get();
+          var userMap = (await userData).data()! as Map;
+
+          if (userMap['status'] == false) {
+            print("sending notification");
+            await sendNotification("Sent an image", userList, username, widget.room.id);
+          }
+        } else if (widget.room.type == types.RoomType.group) {
+          print("room is group");
+          List userList = [];
+          List finalUserList = [];
+          userList.addAll(roomMap['userIds']);
+          userList = userList.toSet().toList();
+          userList.remove(FirebaseAuth.instance.currentUser!.uid);
+
+          for (String userID in userList) {
+            var userData = users.doc(userID).get();
+            var userMap = (await userData).data()! as Map;
+
+            if (userMap['status'] == false) {
+              finalUserList.add(userID);
+            }
+          }
+
+          print("userList is $finalUserList");
+
+          if (finalUserList.isNotEmpty) {
+            print("sending notification");
+            await sendNotification(
+                "Sent an image", finalUserList, "$username - ${widget.room.name!}", widget.room.id);
+          }
+        }
       } finally {
         _setAttachmentUploading(false);
       }
@@ -187,10 +294,57 @@ class _ChatPageState extends State<ChatPage> {
       widget.room.id,
     );
 
+    print("message.text is ${message.text}");
+
     CollectionReference rooms = FirebaseFirestore.instance.collection('rooms');
+    CollectionReference users = FirebaseFirestore.instance.collection('users');
     var roomData = rooms.doc(widget.room.id).get();
     var roomMap = (await roomData).data()! as Map;
     roomMap['updatedAt'] = Timestamp.now();
+
+    // sends notifications
+    if (widget.room.type == types.RoomType.direct) {
+      print("room is direct");
+      List userList = [];
+      userList.addAll(roomMap['userIds']);
+      userList.remove(FirebaseAuth.instance.currentUser!.uid);
+
+      print("userList is ${userList}");
+
+      var userData = users.doc(userList.first).get();
+      var userMap = (await userData).data()! as Map;
+
+      if (userMap['status'] == false) {
+        print("sending notification");
+        await sendNotification(message.text, userList, username, widget.room.id);
+      }
+    } else if (widget.room.type == types.RoomType.group) {
+      print("room is group");
+      List userList = [];
+      List finalUserList = [];
+      userList.addAll(roomMap['userIds']);
+      print("userList before is $userList");
+      userList = userList.toSet().toList();
+      print("userList after is $userList");
+      userList.remove(FirebaseAuth.instance.currentUser!.uid);
+
+      for (String userID in userList) {
+        var userData = users.doc(userID).get();
+        var userMap = (await userData).data()! as Map;
+
+        if (userMap['status'] == false) {
+          finalUserList.add(userID);
+        }
+      }
+
+      print("userList is $finalUserList");
+
+      if (finalUserList.isNotEmpty) {
+        print("sending notification");
+        await sendNotification(
+            message.text, finalUserList, "$username - ${widget.room.name!}", widget.room.id);
+      }
+    }
 
     await rooms.doc(widget.room.id).set(
       roomMap,
@@ -231,6 +385,62 @@ class _ChatPageState extends State<ChatPage> {
                   color: Theme.of(context).appBarTheme.toolbarTextStyle!.color),
             ),
           ),
+          (() {
+            if (widget.room.type == types.RoomType.direct) {
+              return Row(
+                children: [
+                  const SizedBox(width: 10),
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance.collection('users').doc(widget.room.users.firstWhere((u) => u.id != FirebaseAuth.instance.currentUser!.uid).id).snapshots(),
+                    builder: (BuildContext context,
+                        AsyncSnapshot<DocumentSnapshot> snapshot) {
+                      if (snapshot.hasError) {
+                        return const Text("Something went wrong");
+                      }
+
+                      if (snapshot.hasData &&
+                          !snapshot.data!.exists) {
+                        return const Text("Document does not exist");
+                      }
+
+                      if (snapshot.connectionState ==
+                          ConnectionState.active) {
+
+                        Map<String, dynamic> data =
+                        snapshot.data!.data() as Map<String, dynamic>;
+
+                        if (data['status'] == true) {
+                          return Container(
+                            height: 10,
+                            width: 10,
+                            decoration: const BoxDecoration(
+                              color: Colors.green,
+                              border: const Border(),
+                              shape: BoxShape.circle,
+                            ),
+                          );
+                        } else {
+                          return Container(
+                            height: 10,
+                            width: 10,
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              border: Border(),
+                              shape: BoxShape.circle,
+                            ),
+                          );
+                        }
+                      }
+
+                      return const SizedBox();
+                    },
+                  ),
+                ],
+              );
+            } else {
+              return const SizedBox();
+            }
+          } ())
         ]),
         actions: [
           ((){
@@ -297,7 +507,7 @@ class _ChatPageState extends State<ChatPage> {
                     if (Theme.of(context).brightness == Brightness.light) {
                       return const DefaultChatTheme();
                     } else {
-                      return const DarkChatTheme();
+                      return const DarkChatTheme(inputPadding: EdgeInsets.fromLTRB(24, 20, 24, 20), inputMargin: EdgeInsets.zero);
                     }
                   }()),
                   isAttachmentUploading: _isAttachmentUploading,
