@@ -3,6 +3,8 @@ library contactus;
 import 'package:flutter/material.dart';
 import 'package:typicons_flutter/typicons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:io' show Platform;
+import 'package:package_info_plus/package_info_plus.dart';
 
 ///Class for adding contact details/profile details as a complete new page in your flutter app.
 class ContactUs extends StatelessWidget {
@@ -225,6 +227,20 @@ class ContactUs extends StatelessWidget {
             SizedBox(
               height: 10.0,
             ),
+            FutureBuilder<PackageInfo>(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, packageInfo) {
+                if (packageInfo.connectionState == ConnectionState.done) {
+                  return Text(
+                      "Platform: ${Platform.operatingSystem} | App Version: ${packageInfo.data!.version} (${packageInfo.data!.buildNumber})"
+                  );
+                }
+                return const Text("");
+              }
+            ),
+            SizedBox(
+              height: 10.0,
+            ),
             Visibility(
               visible: website != null,
               child: Card(
@@ -238,7 +254,10 @@ class ContactUs extends StatelessWidget {
                 ),
                 color: cardColor,
                 child: ListTile(
-                  leading: Icon(Typicons.link, color: textColor,),
+                  leading: Icon(
+                    Typicons.link,
+                    color: textColor,
+                  ),
                   title: Text(
                     websiteText ?? 'Website',
                     style: TextStyle(
@@ -263,7 +282,10 @@ class ContactUs extends StatelessWidget {
                 ),
                 color: cardColor,
                 child: ListTile(
-                  leading: Icon(Typicons.phone, color: textColor,),
+                  leading: Icon(
+                    Typicons.phone,
+                    color: textColor,
+                  ),
                   title: Text(
                     phoneNumberText ?? 'Phone Number',
                     style: TextStyle(

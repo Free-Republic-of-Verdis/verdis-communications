@@ -19,8 +19,11 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:verdiscom/service/confrence_service.dart';
 import 'package:verdiscom/model/confrence.dart' as model;
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 import 'home.dart';
+
+FirebaseDatabase database = FirebaseDatabase.instance;
 
 Future<void> sendNotification(String message, List idsTo, String username, String roomID) async {
   HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('sendNotification');
@@ -133,10 +136,10 @@ class _ChatPageState extends State<ChatPage> {
 
           print("userList is ${userList}");
 
-          var userData = users.doc(userList.first).get();
-          var userMap = (await userData).data()! as Map;
+          DatabaseReference ref = FirebaseDatabase.instance.ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+          DatabaseEvent event = await ref.once();
 
-          if (userMap['status'] == false) {
+          if (event.snapshot.value == false) {
             print("sending notification");
             await sendNotification("Sent a file", userList, username, widget.room.id);
           }
@@ -149,10 +152,10 @@ class _ChatPageState extends State<ChatPage> {
           userList.remove(FirebaseAuth.instance.currentUser!.uid);
 
           for (String userID in userList) {
-            var userData = users.doc(userID).get();
-            var userMap = (await userData).data()! as Map;
+            DatabaseReference ref = FirebaseDatabase.instance.ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+            DatabaseEvent event = await ref.once();
 
-            if (userMap['status'] == false) {
+            if (event.snapshot.value == false) {
               finalUserList.add(userID);
             }
           }
@@ -220,10 +223,10 @@ class _ChatPageState extends State<ChatPage> {
 
           print("userList is ${userList}");
 
-          var userData = users.doc(userList.first).get();
-          var userMap = (await userData).data()! as Map;
+          DatabaseReference ref = FirebaseDatabase.instance.ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+          DatabaseEvent event = await ref.once();
 
-          if (userMap['status'] == false) {
+          if (event.snapshot.value == false) {
             print("sending notification");
             await sendNotification("Sent an image", userList, username, widget.room.id);
           }
@@ -236,10 +239,10 @@ class _ChatPageState extends State<ChatPage> {
           userList.remove(FirebaseAuth.instance.currentUser!.uid);
 
           for (String userID in userList) {
-            var userData = users.doc(userID).get();
-            var userMap = (await userData).data()! as Map;
+            DatabaseReference ref = FirebaseDatabase.instance.ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+            DatabaseEvent event = await ref.once();
 
-            if (userMap['status'] == false) {
+            if (event.snapshot.value == false) {
               finalUserList.add(userID);
             }
           }
@@ -311,10 +314,10 @@ class _ChatPageState extends State<ChatPage> {
 
       print("userList is ${userList}");
 
-      var userData = users.doc(userList.first).get();
-      var userMap = (await userData).data()! as Map;
+      DatabaseReference ref = FirebaseDatabase.instance.ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+      DatabaseEvent event = await ref.once();
 
-      if (userMap['status'] == false) {
+      if (event.snapshot.value == false) {
         print("sending notification");
         await sendNotification(message.text, userList, username, widget.room.id);
       }
@@ -329,10 +332,10 @@ class _ChatPageState extends State<ChatPage> {
       userList.remove(FirebaseAuth.instance.currentUser!.uid);
 
       for (String userID in userList) {
-        var userData = users.doc(userID).get();
-        var userMap = (await userData).data()! as Map;
+        DatabaseReference ref = FirebaseDatabase.instance.ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+        DatabaseEvent event = await ref.once();
 
-        if (userMap['status'] == false) {
+        if (event.snapshot.value == false) {
           finalUserList.add(userID);
         }
       }
@@ -387,35 +390,30 @@ class _ChatPageState extends State<ChatPage> {
           ),
           (() {
             if (widget.room.type == types.RoomType.direct) {
+              DatabaseReference ref = FirebaseDatabase.instance.ref("users/${widget.room.users.firstWhere((u) => u.id != FirebaseAuth.instance.currentUser!.uid).id}/status");
+              Stream<DatabaseEvent> stream = ref.onValue;
+
               return Row(
                 children: [
                   const SizedBox(width: 10),
-                  StreamBuilder<DocumentSnapshot>(
-                    stream: FirebaseFirestore.instance.collection('users').doc(widget.room.users.firstWhere((u) => u.id != FirebaseAuth.instance.currentUser!.uid).id).snapshots(),
+                  StreamBuilder<DatabaseEvent>(
+                    stream: stream,
                     builder: (BuildContext context,
-                        AsyncSnapshot<DocumentSnapshot> snapshot) {
+                        AsyncSnapshot<DatabaseEvent> snapshot) {
                       if (snapshot.hasError) {
                         return const Text("Something went wrong");
-                      }
-
-                      if (snapshot.hasData &&
-                          !snapshot.data!.exists) {
-                        return const Text("Document does not exist");
                       }
 
                       if (snapshot.connectionState ==
                           ConnectionState.active) {
 
-                        Map<String, dynamic> data =
-                        snapshot.data!.data() as Map<String, dynamic>;
-
-                        if (data['status'] == true) {
+                        if (snapshot.data?.snapshot.value == true) {
                           return Container(
                             height: 10,
                             width: 10,
                             decoration: const BoxDecoration(
                               color: Colors.green,
-                              border: const Border(),
+                              border: Border(),
                               shape: BoxShape.circle,
                             ),
                           );

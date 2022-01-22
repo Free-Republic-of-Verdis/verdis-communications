@@ -11,6 +11,9 @@ import 'chat.dart';
 import 'landing_page.dart';
 import 'users.dart';
 import '../util/util.dart';
+import 'package:firebase_database/firebase_database.dart';
+
+FirebaseDatabase database = FirebaseDatabase.instance;
 
 class RoomsPage extends StatefulWidget {
   const RoomsPage({Key? key}) : super(key: key);
@@ -83,7 +86,7 @@ class _RoomsPageState extends State<RoomsPage> {
             tag: name,
             child: (() {
               if (room.type == types.RoomType.direct) {
-                profile[room] = SizedBox(
+                return SizedBox(
                   height: 40,
                   width: 40,
                   child: Stack(
@@ -93,7 +96,7 @@ class _RoomsPageState extends State<RoomsPage> {
                       /// For example, profile picture.
                       (() {
                         if (hasImage == false) {
-                          return CircleAvatar(
+                          profile[room] = CircleAvatar(
                             backgroundColor: color,
                             backgroundImage: null,
                             radius: 20,
@@ -104,6 +107,7 @@ class _RoomsPageState extends State<RoomsPage> {
                             )
                                 : null,
                           );
+                          return profile[room];
                         }
                         if (room.imageUrl!.split(".").last == 'svg') {
                           return ClipOval(
@@ -122,7 +126,7 @@ class _RoomsPageState extends State<RoomsPage> {
                             ),
                           );
                         } else {
-                          return CachedNetworkImage(
+                          profile[room] = CachedNetworkImage(
                             imageUrl: room.imageUrl!,
                             fit: BoxFit.fill,
                             width: 40,
@@ -154,37 +158,29 @@ class _RoomsPageState extends State<RoomsPage> {
                                 width: 40,
                                 child: Icon(Icons.error)),
                           );
+                          return profile[room];
                         }
                       }()),
                       Align(
                         alignment: Alignment.bottomRight,
-                        child: StreamBuilder<DocumentSnapshot>(
-                          stream: users
-                              .doc(otherUser.id).snapshots(),
+                        child: StreamBuilder<DatabaseEvent>(
+                          stream: FirebaseDatabase.instance.ref("users/${otherUser.id}/status").onValue,
                           builder: (BuildContext context,
-                              AsyncSnapshot<DocumentSnapshot> snapshot) {
+                              AsyncSnapshot<DatabaseEvent> snapshot) {
                             if (snapshot.hasError) {
                               return const Text("Something went wrong");
-                            }
-
-                            if (snapshot.hasData &&
-                                !snapshot.data!.exists) {
-                              return const Text("Document does not exist");
                             }
 
                             if (snapshot.connectionState ==
                                 ConnectionState.active) {
 
-                              Map<String, dynamic> data =
-                              snapshot.data!.data() as Map<String, dynamic>;
-
-                              if (data['status'] == true) {
+                              if (snapshot.data?.snapshot.value == true) {
                                 return Container(
                                   height: 10,
                                   width: 10,
                                   decoration: const BoxDecoration(
                                     color: Colors.green,
-                                    border: const Border(),
+                                    border: Border(),
                                     shape: BoxShape.circle,
                                   ),
                                 );
@@ -208,7 +204,6 @@ class _RoomsPageState extends State<RoomsPage> {
                     ],
                   ),
                 );
-                return profile[room];
               } else {
                 if (hasImage == false) {
                   profile[room] = CircleAvatar(

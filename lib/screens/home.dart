@@ -2,6 +2,7 @@ import "dart:math";
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:easy_dynamic_theme/easy_dynamic_theme.dart';
 import 'package:edge_alerts/edge_alerts.dart';
 import 'package:flutter/gestures.dart';
@@ -34,11 +35,14 @@ import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:verdiscom/util/util.dart';
 import 'dart:convert';
 import 'package:flutter_firebase_chat_core/flutter_firebase_chat_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 import 'chat.dart';
 
 firebase_storage.FirebaseStorage storage =
     firebase_storage.FirebaseStorage.instance;
+
+FirebaseDatabase database = FirebaseDatabase.instance;
 
 late Map<String, dynamic> userData;
 var fireStoreUserRef = FirebaseFirestore.instance
@@ -206,52 +210,55 @@ Future<void> registerNotification(BuildContext context) async {
   }
 
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (c, a1, a2) => StreamBuilder<types.Room>(
-          stream: FirebaseChatCore.instance.room(message.data['roomID']),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.active) {
-              //print(snapshot.data!);
-            }
+    if (message.data['roomID'] != null) {
+      Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (c, a1, a2) =>
+              StreamBuilder<types.Room>(
+                stream: FirebaseChatCore.instance.room(message.data['roomID']),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.active) {
+                    //print(snapshot.data!);
+                  }
 
-            if (!snapshot.hasData) {
-              return const Center(
-                child: SizedBox(
-                  height: 40,
-                  width: 40,
-                  child: CircularProgressIndicator()
-                )
-              );
-            }
+                  if (!snapshot.hasData) {
+                    return const Center(
+                        child: SizedBox(
+                            height: 40,
+                            width: 40,
+                            child: CircularProgressIndicator()
+                        )
+                    );
+                  }
 
-            types.Room room = snapshot.data!;
+                  types.Room room = snapshot.data!;
 
-            _buildAvatar(room);
+                  _buildAvatar(room);
 
-            if (room.id == message.data['roomID']) {
-              return ChatPage(
-                backupName: "error",
-                room: room,
-                avatar: notificationProfile[room],
-              );
-            }
+                  if (room.id == message.data['roomID']) {
+                    return ChatPage(
+                      backupName: "error",
+                      room: room,
+                      avatar: notificationProfile[room],
+                    );
+                  }
 
-            return const Center(
-                child: SizedBox(
-                    height: 40,
-                    width: 40,
-                    child: CircularProgressIndicator()
-                )
-            );
-          },
+                  return const Center(
+                      child: SizedBox(
+                          height: 40,
+                          width: 40,
+                          child: CircularProgressIndicator()
+                      )
+                  );
+                },
+              ),
+          transitionsBuilder: (c, anim, a2, child) =>
+              FadeTransition(opacity: anim, child: child),
+          transitionDuration: const Duration(milliseconds: 150),
         ),
-        transitionsBuilder: (c, anim, a2, child) =>
-            FadeTransition(opacity: anim, child: child),
-        transitionDuration: const Duration(milliseconds: 150),
-      ),
-    );
+      );
+    }
   });
 
   messaging.getToken().then((token) async {
@@ -334,13 +341,10 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
     setStatus(true);
   }
 
-  void setStatus(bool status) {
-    users.doc(FirebaseAuth.instance.currentUser!.uid).set(
-      {
-        'status': status,
-      },
-      SetOptions(merge: true),
-    );
+  void setStatus(bool status) async {
+    await FirebaseDatabase.instance.ref("users/${FirebaseAuth.instance.currentUser!.uid}").update({
+      "status": status,
+    });
   }
 
   @override
@@ -781,11 +785,11 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
                   onTap: () async {
                     await users.doc(FirebaseAuth.instance.currentUser!.uid).set(
                       {
-                        'status': false,
                         'pushToken': []
                       },
                       SetOptions(merge: true),
                     );
+                    setStatus(false);
                     FirebaseAuth.instance.signOut();
                     Navigator.push(
                       context,

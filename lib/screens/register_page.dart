@@ -1,3 +1,4 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:verdiscom/screens/landing_page.dart';
 import 'package:verdiscom/util/const.dart';
 import 'package:verdiscom/widgets/custom_btn.dart';
@@ -7,8 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_firebase_chat_core/flutter_firebase_chat_core.dart';
-
-import 'home.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -45,7 +44,12 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   // Create a new user account
-  String? _createAccount() {
+  Future<String?> _createAccount() async {
+    for (var element in (await FirebaseChatCore.instance.users().first)) {
+      if (element.firstName?.toLowerCase() == _registerUsername.toLowerCase()) {
+        return "Sorry! This username is already taken. Please try again :)";
+      }
+    }
     if (_registerUsername == "") {
       return "username must not be empty";
     } else {
@@ -60,7 +64,7 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     // Run the create account method
-    String? _createAccountFeedback = _createAccount();
+    String? _createAccountFeedback = await _createAccount();
 
     // If the string is not null, we got error while create account.
     if (_createAccountFeedback != null) {
@@ -71,13 +75,15 @@ class _RegisterPageState extends State<RegisterPage> {
         _registerFormLoading = false;
       });
     } else {
-      await FirebaseAuth.instance.currentUser?.updateDisplayName(_registerUsername);
+      await FirebaseAuth.instance.currentUser
+          ?.updateDisplayName(_registerUsername);
 
       await FirebaseChatCore.instance.createUserInFirestore(
         types.User(
           firstName: _registerUsername,
           id: FirebaseAuth.instance.currentUser!.uid,
-          imageUrl: 'https://avatars.dicebear.com/api/avataaars/${FirebaseAuth.instance.currentUser!.email!.split("@")[0]}.png',
+          imageUrl:
+              'https://avatars.dicebear.com/api/avataaars/${FirebaseAuth.instance.currentUser!.email!.split("@")[0]}.png',
         ),
       );
 
@@ -88,35 +94,47 @@ class _RegisterPageState extends State<RegisterPage> {
       Map userRoles = globalMap['userRoles'];
       userRoles[FirebaseAuth.instance.currentUser!.uid] = null;
 
-      rooms
-          .doc('verdiscomglobal').set({
-        'userIds': userIds.toSet().toList(),
-        'userRoles': userRoles
-      },
-        SetOptions(merge: true),);
+      rooms.doc('verdiscomglobal').set(
+        {'userIds': userIds.toSet().toList(), 'userRoles': userRoles},
+        SetOptions(merge: true),
+      );
 
       users
-          .doc(FirebaseAuth.instance.currentUser!.uid).set({
-        'email': FirebaseAuth.instance.currentUser!.email,
-        'USD': 100,
-        'assets': [],
-        'badges': [],
-        'defaultProfile': true,
-        'profileType': '',
-        'superNova': false,
-        'username': _registerUsername,
-        'approved': false,
-        'role': 'user',
-        'status': false
-      },
-          SetOptions(merge: true),)
+          .doc(FirebaseAuth.instance.currentUser!.uid)
+          .set(
+            {
+              'email': FirebaseAuth.instance.currentUser!.email,
+              'USD': 100,
+              'assets': [],
+              'badges': [],
+              'defaultProfile': true,
+              'profileType': '',
+              'username': _registerUsername,
+              'approved': false,
+              'role': 'user',
+            },
+            SetOptions(merge: true),
+          )
           .then((value) => print("User Added"))
           .catchError((error) => print("Failed to add user: $error"));
 
+      Iterable<QueryDocumentSnapshot<Object?>> tempTotal = (await users.get())
+          .docs
+          .where((element) => element['role'] == 'admin');
+      List idsTo = [];
+      for (var element in tempTotal) {
+        idsTo.addAll((element.data() as Map<String, dynamic>)['pushToken']);
+      }
+      HttpsCallable callable =
+          FirebaseFunctions.instance.httpsCallable('newUserNotification');
+      await callable.call(<String, dynamic>{
+        'username': _registerUsername,
+        'idsTo': idsTo,
+      });
+
       Navigator.push(
         context,
-        MaterialPageRoute(
-            builder: (context) => LandingPage()),
+        MaterialPageRoute(builder: (context) => LandingPage()),
       );
     }
   }
