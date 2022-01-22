@@ -231,9 +231,30 @@ class ContactUs extends StatelessWidget {
               future: PackageInfo.fromPlatform(),
               builder: (context, packageInfo) {
                 if (packageInfo.connectionState == ConnectionState.done) {
-                  return Text(
-                      "Platform: ${Platform.operatingSystem} | App Version: ${packageInfo.data!.version} (${packageInfo.data!.buildNumber})"
-                  );
+                  try {
+                    return Text(
+                        "Platform: ${Platform
+                            .operatingSystem} | App Version: ${packageInfo.data!
+                            .version} (${packageInfo.data!.buildNumber})"
+                    );
+                  } catch (err) {
+                    try {
+                      if (packageInfo.data!.buildNumber == "") {
+                        return Text(
+                            "Platform: N/A | App Version: ${packageInfo.data!
+                                .version}"
+                        );
+                      }
+                      return Text(
+                          "Platform: N/A | App Version: ${packageInfo.data!
+                              .version} (${packageInfo.data!.buildNumber})"
+                      );
+                    } catch (err) {
+                      return const Text(
+                          "Platform: N/A | App Version: N/A)"
+                      );
+                    }
+                  }
                 }
                 return const Text("");
               }
