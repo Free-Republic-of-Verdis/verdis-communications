@@ -6,7 +6,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_firebase_chat_core/flutter_firebase_chat_core.dart';
@@ -390,14 +389,15 @@ class _ChatPageState extends State<ChatPage> {
           ),
           (() {
             if (widget.room.type == types.RoomType.direct) {
-              DatabaseReference ref = FirebaseDatabase.instance.ref("users/${widget.room.users.firstWhere((u) => u.id != FirebaseAuth.instance.currentUser!.uid).id}/status");
-              Stream<DatabaseEvent> stream = ref.onValue;
+              types.User otherUser = widget.room.users.firstWhere(
+                    (u) => u.id != FirebaseAuth.instance.currentUser!.uid,
+              );
 
               return Row(
                 children: [
                   const SizedBox(width: 10),
                   StreamBuilder<DatabaseEvent>(
-                    stream: stream,
+                    stream: FirebaseDatabase.instance.ref("users/${otherUser.id}").onValue,
                     builder: (BuildContext context,
                         AsyncSnapshot<DatabaseEvent> snapshot) {
                       if (snapshot.hasError) {
@@ -406,8 +406,7 @@ class _ChatPageState extends State<ChatPage> {
 
                       if (snapshot.connectionState ==
                           ConnectionState.active) {
-
-                        if (snapshot.data?.snapshot.value == true) {
+                        if ((snapshot.data?.snapshot.value! as Map)['status'] == true) {
                           return Container(
                             height: 10,
                             width: 10,
