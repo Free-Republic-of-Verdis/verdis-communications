@@ -35,6 +35,8 @@ class _GCPageState extends State<GCPage> {
   @override
   void initState() {
     super.initState();
+    print("following is fgshj");
+    print(widget.chatList.length);
   }
 
   Uint8List ?_profilePicFile;
@@ -101,10 +103,10 @@ class _GCPageState extends State<GCPage> {
         var downloadUrl = await ref.getDownloadURL();
 
         room = await FirebaseChatCore.instance.createGroupRoom(
-            users: chatList, name: input.text, imageUrl: downloadUrl);
+            users: widget.chatList, name: input.text, imageUrl: downloadUrl);
       } else {
         room = await FirebaseChatCore.instance.createGroupRoom(
-            users: chatList, name: input.text);
+            users: widget.chatList, name: input.text);
       }
 
       setState(() {
@@ -145,7 +147,7 @@ class _GCPageState extends State<GCPage> {
                       child: !hasImage
                           ? Text(
                         name.isEmpty ? '' : name[0].toUpperCase(),
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(color: Theme.of(context).primaryColorLight),
                       )
                           : null,
                     );
@@ -182,7 +184,7 @@ class _GCPageState extends State<GCPage> {
                               room.name!.isEmpty
                                   ? ''
                                   : room.name![0].toUpperCase(),
-                              style: const TextStyle(color: Colors.white),
+                              style: TextStyle(color: Theme.of(context).primaryColorLight),
                             )
                                 : null,
                           ),
@@ -246,7 +248,7 @@ class _GCPageState extends State<GCPage> {
                     child: !hasImage
                         ? Text(
                       name.isEmpty ? '' : name[0].toUpperCase(),
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: Theme.of(context).primaryColorLight),
                     )
                         : null,
                   ),
@@ -294,114 +296,90 @@ class _GCPageState extends State<GCPage> {
         }()),
         title: const Text('Group Chat Options'),
       ),
-      body: StreamBuilder<List<types.User>>(
-        stream: FirebaseChatCore.instance.users(),
-        initialData: const [],
-        builder: (context, snapshot) {
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Container(
-              alignment: Alignment.center,
-              margin: const EdgeInsets.only(
-                bottom: 200,
+      body: ListView.builder(
+        itemCount: widget.chatList.length + 6,
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(40, 50, 40, 0),
+              child: EditableImage(
+// Define the method that will run on the change process of the image.
+                onChange: (file) => _directUpdateImage(file),
+
+// Define the source of the image.
+                image: (_profilePicFile != null)
+                    ? Image.memory(_profilePicFile!, fit: BoxFit.cover)
+                    : null,
+
+// Define the size of EditableImage.
+                size: 150.0,
+
+// Define the Theme of image picker.
+                imagePickerTheme: ThemeData(
+                  // Define the default brightness and colors.
+                  primaryColor: Colors.white,
+                  shadowColor: Colors.transparent,
+                  backgroundColor: Colors.white70,
+                  iconTheme: const IconThemeData(color: Colors.black87),
+
+                  // Define the default font family.
+                  fontFamily: 'Georgia',
+                ),
+
+// Define the border of the image if needed.
+                imageBorder: Border.all(color: Colors.black87, width: 2.0),
+
+// Define the border of the icon if needed.
+                editIconBorder: Border.all(color: Colors.black87, width: 2.0),
               ),
-              child: const Text('No users'),
+            );
+          } else if (index == 1) {
+            return const SizedBox(
+              height: 20,
+            );
+          } else if (index == 2) {
+            return CustomInput(
+              autoFillController: input,
+              onChanged: (string) {},
+              hintText: 'Enter Chat Name',
+              onSubmitted: (string) {},
+            );
+          } else if (index == 3) {
+            return const SizedBox(
+              height: 40,
+            );
+          } else if (index == 4) {
+            return const Center(
+                child: Text(
+                  "Members:",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                  ),
+                ));
+          } else if (index == 5) {
+            return const SizedBox(
+              height: 20,
             );
           }
 
-          return ListView.builder(
-            itemCount: snapshot.data!.length + 6,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(40, 50, 40, 0),
-                  child: EditableImage(
-// Define the method that will run on the change process of the image.
-                    onChange: (file) => _directUpdateImage(file),
+          index -= 6;
 
-// Define the source of the image.
-                    image: (_profilePicFile != null)
-                        ? Image.memory(_profilePicFile!, fit: BoxFit.cover)
-                        : null,
+          final user = widget.chatList[index];
 
-// Define the size of EditableImage.
-                    size: 150.0,
-
-// Define the Theme of image picker.
-                    imagePickerTheme: ThemeData(
-                      // Define the default brightness and colors.
-                      primaryColor: Colors.white,
-                      shadowColor: Colors.transparent,
-                      backgroundColor: Colors.white70,
-                      iconTheme: const IconThemeData(color: Colors.black87),
-
-                      // Define the default font family.
-                      fontFamily: 'Georgia',
-                    ),
-
-// Define the border of the image if needed.
-                    imageBorder: Border.all(color: Colors.black87, width: 2.0),
-
-// Define the border of the icon if needed.
-                    editIconBorder: Border.all(color: Colors.black87, width: 2.0),
-                  ),
-                );
-              } else if (index == 1) {
-                return const SizedBox(
-                  height: 20,
-                );
-              } else if (index == 2) {
-                return CustomInput(
-                  autoFillController: input,
-                  onChanged: (string) {},
-                  hintText: 'Enter Chat Name',
-                  onSubmitted: (string) {},
-                );
-              } else if (index == 3) {
-                return const SizedBox(
-                  height: 40,
-                );
-              } else if (index == 4) {
-                return const Center(
-                    child: Text(
-                      "Members:",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
-                    ));
-              } else if (index == 5) {
-                return const SizedBox(
-                  height: 20,
-                );
-              }
-
-              index -= 6;
-
-              final user = snapshot.data![index];
-
-              if (widget.chatListNames.contains(user.firstName?.toLowerCase())) {
-                widget.chatList.add(user);
-                return InkWell(
-                  onTap: () {
-                    setState(() {
-                      widget.chatListNames.remove(user.firstName?.toLowerCase());
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 4,
-                    ),
-                    child: _buildAvatar(user),
-                  ),
-                );
-              } else if (widget.chatList.contains(user)) {
-                widget.chatList.remove(user);
-                return const SizedBox();
-              } else {
-                return const SizedBox();
-              }
+          return InkWell(
+            onTap: () {
+              setState(() {
+                widget.chatListNames.remove(user.firstName?.toLowerCase());
+              });
             },
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 4,
+                vertical: 4,
+              ),
+              child: _buildAvatar(user),
+            ),
           );
         },
       ),

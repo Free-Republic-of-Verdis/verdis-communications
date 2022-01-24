@@ -336,6 +336,12 @@
       <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/cloud_functions/example/.pub" />
       <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/cloud_functions/example/.dart_tool" />
       <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/cloud_functions/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/package_info_plus/build" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/package_info_plus/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/package_info_plus/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/package_info_plus/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/package_info_plus/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/package_info_plus/example/build" />
     </content>
     <orderEntry type="jdk" jdkName="Android API 30 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

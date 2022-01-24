@@ -65,6 +65,7 @@ dependencies:
   firebase_messaging: ^11.2.5
   flutter_local_notifications: ^9.2.0
   cloud_functions: ^3.2.5
+  azlistview: ^2.0.0-nullsafety.0
 
 dev_dependencies:
   flutter_test:
@@ -103,6 +104,7 @@ flutter:
     - assets/images/garv.jpg
     - assets/images/banner.png
     - assets/images/banner-dark.png
+    - assets/images/ic_index_bar_bubble_white.png
   fonts:
     - family: Cookie
       fonts:

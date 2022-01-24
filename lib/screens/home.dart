@@ -144,7 +144,7 @@ Future<void> registerNotification(BuildContext context) async {
                   child: !hasImage
                       ? Text(
                     name.isEmpty ? '' : name[0].toUpperCase(),
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: Theme.of(context).primaryColorLight),
                   )
                       : null,
                 );
@@ -179,7 +179,7 @@ Future<void> registerNotification(BuildContext context) async {
                     child: !hasImage
                         ? Text(
                       name.isEmpty ? '' : name[0].toUpperCase(),
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: Theme.of(context).primaryColorLight),
                     )
                         : null,
                   ),

@@ -79,7 +79,7 @@ class _ApproveUsersPageState extends State<ApproveUsersPage> {
                     child: !hasImage
                         ? Text(
                             name.isEmpty ? '' : name[0].toUpperCase(),
-                            style: const TextStyle(color: Colors.white),
+                            style: TextStyle(color: Theme.of(context).primaryColorLight),
                           )
                         : null,
                   ),

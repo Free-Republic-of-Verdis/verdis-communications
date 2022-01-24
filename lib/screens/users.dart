@@ -1,212 +1,327 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:edge_alerts/edge_alerts.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+import 'dart:convert';
+import 'package:azlistview/azlistview.dart';
 import 'package:flutter_firebase_chat_core/flutter_firebase_chat_core.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:verdiscom/widgets/custom_input.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+import 'package:verdiscom/util/util.dart';
+
 import 'chat.dart';
 import 'create_group_chat.dart';
-import '../util/util.dart';
 
-late Widget profile;
-List chatListNames = [];
 List<types.User> chatList = [];
-final TextEditingController input = TextEditingController();
+List chatListNames = [];
 
-class UsersPage extends StatefulWidget {
-  const UsersPage({Key? key}) : super(key: key);
+void _handlePressed(List userList, BuildContext context) async {
+  if (userList.isEmpty) {
+    edgeAlert(context,
+        title: 'select one or more people',
+        description:
+        "Select one person to create DM or select multiple people to create a group chat!",
+        duration: 2,
+        gravity: Gravity.bottom,
+        icon: Icons.error_outline_outlined,
+        backgroundColor: (() {
+          if (Theme.of(context).brightness == Brightness.light) {
+            return Colors.grey;
+          } else {}
+        }()));
+  } else if (userList.length == 1) {
+    types.User otherUser = userList[0];
+    final room = await FirebaseChatCore.instance.createRoom(otherUser);
+
+    Navigator.of(context).pop();
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ChatPage(
+          backupName: otherUser.firstName!,
+          room: room,
+          avatar: (() {
+            if (otherUser.imageUrl!.split(".").last == 'svg') {
+              return ClipOval(
+                child: SvgPicture.network(
+                  otherUser.imageUrl!,
+                  width: 40,
+                  height: 40,
+                  semanticsLabel: 'profile picture',
+                  placeholderBuilder: (BuildContext context) =>
+                  const SizedBox(
+                      height: 40,
+                      width: 40,
+                      child: CircularProgressIndicator()),
+                ),
+              );
+            } else {
+              final hasImage = otherUser.imageUrl != null;
+
+              var color = Colors.transparent;
+
+              if (room.type == types.RoomType.direct) {
+                try {
+                  final otherUser = room.users.firstWhere(
+                        (u) =>
+                    u.id != FirebaseChatCore.instance.firebaseUser?.uid,
+                  );
+
+                  color = getUserAvatarNameColor(otherUser);
+                } catch (e) {
+                  // Do nothing if other user is not found
+                }
+              }
+
+              return CachedNetworkImage(
+                imageUrl: otherUser.imageUrl!,
+                fit: BoxFit.fill,
+                width: 40,
+                height: 40,
+                imageBuilder: (context, imageProvider) => CircleAvatar(
+                  radius: 20,
+                  backgroundImage: imageProvider,
+                  backgroundColor: hasImage ? Colors.transparent : color,
+                  child: !hasImage
+                      ? Text(
+                    room.name!.isEmpty
+                        ? ''
+                        : room.name![0].toUpperCase(),
+                    style: TextStyle(color: Theme.of(context).primaryColorLight),
+                  )
+                      : null,
+                ),
+                placeholder: (context, url) => const SizedBox(
+                    height: 40,
+                    width: 40,
+                    child: CircularProgressIndicator()),
+                errorWidget: (context, url, error) => const SizedBox(
+                    height: 40, width: 40, child: Icon(Icons.error)),
+              );
+            }
+          }()),
+        ),
+      ),
+    );
+  } else {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+          builder: (context) => GCPage(chatList: chatList.toSet().toList(), chatListNames: chatListNames.toSet().toList())
+      ),
+    );
+  }
+}
+
+class Colours {
+  static const Color gray_33 = Color(0xFF333333);
+  static const Color gray_66 = Color(0xFF666666);
+  static const Color gray_99 = Color(0xFF999999);
+}
+
+class Utils {
+  static String getImgPath(String name, {String format = 'png'}) {
+    return 'assets/images/$name.$format';
+  }
+}
+
+class UserModel extends ISuspensionBean {
+  String name;
+  String tagIndex;
+  String? avatarUrl;
+  types.User user;
+
+  UserModel({
+    required this.name,
+    required this.tagIndex,
+    required this.avatarUrl,
+    required this.user,
+  });
+
+  UserModel.fromJson(Map<String, dynamic> json)
+      : name = json['name'],
+        tagIndex = json['tagIndex'],
+        avatarUrl = json['avatarUrl'],
+        user = json['user'];
+
+  Map<String, dynamic> toJson() =>
+      {'name': name, 'tagIndex': tagIndex, 'avatarUrl': avatarUrl, 'user': user};
 
   @override
-  State<UsersPage> createState() => _UsersPageState();
+  String getSuspensionTag() => tagIndex;
+
+  @override
+  String toString() => json.encode(this);
+}
+
+class UsersPage extends StatefulWidget {
+  const UsersPage({
+    Key? key,
+    this.fromType,
+  }) : super(key: key);
+  final int? fromType;
+
+  @override
+  _UsersPageState createState() => _UsersPageState();
 }
 
 class _UsersPageState extends State<UsersPage> {
-  late FocusNode _inputFocusNode;
+  /// Controller to scroll or jump to a particular item.
+  final ItemScrollController itemScrollController = ItemScrollController();
+
+  final CollectionReference _collectionRef =
+  FirebaseFirestore.instance.collection('users');
+
+  List<UserModel> originList = [];
+  List<UserModel> dataList = [];
+  Map boolMap = {};
+
+  late TextEditingController textEditingController;
 
   @override
   void initState() {
-    _inputFocusNode = FocusNode();
+    super.initState();
     chatListNames = [];
     chatList = [];
-    super.initState();
+    textEditingController = TextEditingController();
+    loadData();
   }
 
   @override
   void dispose() {
-    _inputFocusNode.dispose();
+    textEditingController.dispose();
     super.dispose();
   }
 
-  void _handlePressed(List userList, BuildContext context) async {
-    if (userList.isEmpty) {
-      edgeAlert(context,
-          title: 'select one or more people',
-          description:
-              "Select one person to create DM or select multiple people to create a group chat!",
-          duration: 2,
-          gravity: Gravity.top,
-          icon: Icons.error_outline_outlined,
-          backgroundColor: (() {
-            if (Theme.of(context).brightness == Brightness.light) {
-              return Colors.grey;
-            } else {}
-          }()));
-    } else if (userList.length == 1) {
-      types.User otherUser = userList[0];
-      final room = await FirebaseChatCore.instance.createRoom(otherUser);
-
-      Navigator.of(context).pop();
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => ChatPage(
-            backupName: otherUser.firstName!,
-            room: room,
-            avatar: (() {
-              if (otherUser.imageUrl!.split(".").last == 'svg') {
-                return ClipOval(
-                  child: SvgPicture.network(
-                    otherUser.imageUrl!,
-                    width: 40,
-                    height: 40,
-                    semanticsLabel: 'profile picture',
-                    placeholderBuilder: (BuildContext context) =>
-                        const SizedBox(
-                            height: 40,
-                            width: 40,
-                            child: CircularProgressIndicator()),
-                  ),
-                );
-              } else {
-                final hasImage = otherUser.imageUrl != null;
-
-                var color = Colors.transparent;
-
-                if (room.type == types.RoomType.direct) {
-                  try {
-                    final otherUser = room.users.firstWhere(
-                      (u) =>
-                          u.id != FirebaseChatCore.instance.firebaseUser?.uid,
-                    );
-
-                    color = getUserAvatarNameColor(otherUser);
-                  } catch (e) {
-                    // Do nothing if other user is not found
-                  }
-                }
-
-                return CachedNetworkImage(
-                  imageUrl: otherUser.imageUrl!,
-                  fit: BoxFit.fill,
-                  width: 40,
-                  height: 40,
-                  imageBuilder: (context, imageProvider) => CircleAvatar(
-                    radius: 20,
-                    backgroundImage: imageProvider,
-                    backgroundColor: hasImage ? Colors.transparent : color,
-                    child: !hasImage
-                        ? Text(
-                            room.name!.isEmpty
-                                ? ''
-                                : room.name![0].toUpperCase(),
-                            style: const TextStyle(color: Colors.white),
-                          )
-                        : null,
-                  ),
-                  placeholder: (context, url) => const SizedBox(
-                      height: 40,
-                      width: 40,
-                      child: CircularProgressIndicator()),
-                  errorWidget: (context, url, error) => const SizedBox(
-                      height: 40, width: 40, child: Icon(Icons.error)),
-                );
-              }
-            }()),
-          ),
+  Widget _buildAvatar(String? avatarUrl) {
+    if (avatarUrl!.split(".").last == 'svg') {
+      return ClipOval(
+        child: SvgPicture.network(
+          avatarUrl,
+          width: 40,
+          height: 40,
+          semanticsLabel: 'profile picture',
+          placeholderBuilder: (BuildContext context) => const SizedBox(
+              height: 40, width: 40, child: CircularProgressIndicator()),
         ),
       );
     } else {
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => GCPage(chatList: chatList, chatListNames: chatListNames)
+      return CachedNetworkImage(
+        imageUrl: avatarUrl,
+        fit: BoxFit.fill,
+        width: 40,
+        height: 40,
+        imageBuilder: (context, imageProvider) => CircleAvatar(
+          radius: 20,
+          backgroundImage: imageProvider,
+          backgroundColor: Colors.transparent,
         ),
+        placeholder: (context, url) => const SizedBox(
+            height: 40, width: 40, child: CircularProgressIndicator()),
+        errorWidget: (context, url, error) =>
+        const SizedBox(height: 40, width: 40, child: Icon(Icons.error)),
       );
     }
   }
 
-  Widget _buildAvatar(types.User user) {
-    final color = getUserAvatarNameColor(user);
-    final hasImage = user.imageUrl != null;
-    final name = getUserName(user);
+  void loadData() async {
+    // Get docs from collection reference
+    QuerySnapshot querySnapshot = await _collectionRef.get();
 
-    return Card(
-        elevation: 4,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(
-            Radius.circular(10),
-          ),
+    // Get data from docs and convert map to List
+    originList = querySnapshot.docs
+        .map((doc) {
+      Map<String, dynamic> userMap = doc.data() as Map<String, dynamic>;
+      userMap['createdAt'] = userMap['createdAt']?.millisecondsSinceEpoch;
+      userMap['id'] = doc.id;
+      userMap['lastSeen'] = userMap['lastSeen']?.millisecondsSinceEpoch;
+      userMap['updatedAt'] = userMap['updatedAt']?.millisecondsSinceEpoch;
+
+      return UserModel(
+        name: userMap['firstName'],
+        tagIndex: userMap['role'] ?? "user",
+        avatarUrl: userMap['imageUrl'],
+        user: types.User.fromJson(userMap),
+      );
+    })
+        .toList();
+
+    _handleList(originList);
+  }
+
+  void _handleList(List<UserModel> list) {
+    dataList.clear();
+    if (list.isEmpty) {
+      setState(() {});
+      return;
+    }
+    dataList.addAll(list);
+
+    // A-Z sort.
+    SuspensionUtil.sortListBySuspensionTag(dataList);
+
+    // show sus tag.
+    SuspensionUtil.setShowSuspensionStatus(dataList);
+
+    setState(() {});
+
+    if (itemScrollController.isAttached) {
+      itemScrollController.jumpTo(index: 0);
+    }
+  }
+
+  Widget getSusItem(BuildContext context, String tag, {double susHeight = 40}) {
+    return Container(
+      height: susHeight,
+      width: MediaQuery.of(context).size.width,
+      padding: const EdgeInsets.only(left: 16.0),
+      color: const Color.fromARGB(40, 197, 203, 209),
+      alignment: Alignment.centerLeft,
+      child: Text(
+        tag,
+        softWrap: false,
+        style: const TextStyle(
+          fontSize: 14.0,
+          color: Color(0xFF666666),
         ),
-        child: ListTile(
-          leading: Hero(
-            tag: name,
-            child: (() {
-              if (user.imageUrl!.split(".").last == 'svg') {
-                profile = ClipOval(
-                  child: SvgPicture.network(
-                    user.imageUrl!,
-                    width: 40,
-                    height: 40,
-                    semanticsLabel: 'profile picture',
-                    placeholderBuilder: (BuildContext context) =>
-                        const SizedBox(
-                            height: 40,
-                            width: 40,
-                            child: CircularProgressIndicator()),
-                  ),
-                );
+      ),
+    );
+  }
 
-                return profile;
-              } else {
-                profile = CachedNetworkImage(
-                  imageUrl: user.imageUrl!,
-                  fit: BoxFit.fill,
-                  width: 40,
-                  height: 40,
-                  imageBuilder: (context, imageProvider) => CircleAvatar(
-                    radius: 20,
-                    backgroundImage: imageProvider,
-                    backgroundColor: hasImage ? Colors.transparent : color,
-                    child: !hasImage
-                        ? Text(
-                            name.isEmpty ? '' : name[0].toUpperCase(),
-                            style: const TextStyle(color: Colors.white),
-                          )
-                        : null,
-                  ),
-                  placeholder: (context, url) => const SizedBox(
-                      height: 40,
-                      width: 40,
-                      child: CircularProgressIndicator()),
-                  errorWidget: (context, url, error) => const SizedBox(
-                      height: 40, width: 40, child: Icon(Icons.error)),
-                );
-
-                return profile;
-              }
-            }()),
-          ),
-          title: Hero(
-              tag: name + " name",
-              child: Material(
-                  color: Colors.transparent,
-                  child: Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 18.0,
-                    ),
-                  ))),
-        ));
+  Widget getListItem(BuildContext context, UserModel model,
+      {double susHeight = 40}) {
+    return ListTile(
+      leading: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeInOutQuart,
+        switchOutCurve: Curves.easeInOutQuart,
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return FadeTransition(child: child, opacity: animation);
+        },
+        child: boolMap[model] ?? _buildAvatar(model.avatarUrl),
+      ),
+      title: Text(model.name),
+      onTap: () {
+        setState(() {
+          if (boolMap[model] == null) {
+            boolMap[model] = const CircleAvatar(
+              radius: 20,
+              backgroundColor: Colors.transparent,
+              child: Icon(Icons.done),
+            );
+            chatListNames.add(model.name);
+            chatList.add(model.user);
+            chatListNames = chatListNames.toSet().toList();
+            chatList = chatList.toSet().toList();
+          } else {
+            boolMap[model] = null;
+            chatListNames.remove(model.name);
+            chatList.remove(model.user);
+            chatListNames = chatListNames.toSet().toList();
+            chatList = chatList.toSet().toList();
+          }
+        });
+      },
+    );
   }
 
   @override
@@ -230,78 +345,94 @@ class _UsersPageState extends State<UsersPage> {
         }()),
         title: const Text('Create Chat'),
       ),
-      body: StreamBuilder<List<types.User>>(
-        stream: FirebaseChatCore.instance.users(),
-        initialData: const [],
-        builder: (context, snapshot) {
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Container(
-              alignment: Alignment.center,
-              margin: const EdgeInsets.only(
-                bottom: 200,
-              ),
-              child: const Text('No users'),
-            );
-          }
-
-          return ListView.builder(
-            itemCount: snapshot.data!.length + 3,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return const SizedBox(
-                  height: 20,
-                );
-              } else if (index == 1) {
-                return CustomInput(
-                  focusNode: _inputFocusNode,
-                  autoFillController: input,
-                  onChanged: (string) {},
-                  hintText: 'Enter Username',
-                  onSubmitted: (string) {
-                    input.clear();
-                    setState(() {
-                      chatListNames.add(string.toLowerCase());
-                    });
-                    Future.delayed(const Duration(milliseconds: 100), () { _inputFocusNode.requestFocus(); });
-                  },
-                );
-              } else if (index == 2) {
-                return const SizedBox(
-                  height: 20,
-                );
-              }
-
-              index -= 3;
-
-              final user = snapshot.data![index];
-
-              if (chatListNames.contains(user.firstName?.toLowerCase())) {
-                chatList.add(user);
-                chatList = chatList.toSet().toList();
-                chatListNames = chatListNames.toSet().toList();
-                return InkWell(
-                  onTap: () {
-                    setState(() {
-                      chatListNames.remove(user.firstName?.toLowerCase());
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 4,
+      resizeToAvoidBottomInset: false,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                  border: Border.all(
+                      color: const Color.fromARGB(255, 225, 226, 230),
+                      width: 0.33),
+                  color: const Color.fromARGB(255, 239, 240, 244),
+                  borderRadius: BorderRadius.circular(12)),
+              child: TextField(
+                autofocus: false,
+                onChanged: (text) {
+                  if (text.isEmpty) {
+                    _handleList(originList);
+                  } else {
+                    List<UserModel> list = originList.where((v) {
+                      return v.name.toLowerCase().contains(text.toLowerCase());
+                    }).toList();
+                    _handleList(list);
+                  };
+                },
+                controller: textEditingController,
+                decoration: InputDecoration(
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: Colours.gray_33,
                     ),
-                    child: _buildAvatar(user),
+                    suffixIcon: Offstage(
+                      offstage: textEditingController.text.isEmpty,
+                      child: InkWell(
+                        onTap: () {
+                          textEditingController.clear();
+                          _handleList(originList);
+                        },
+                        child: const Icon(
+                          Icons.cancel,
+                          color: Colours.gray_99,
+                        ),
+                      ),
+                    ),
+                    border: InputBorder.none,
+                    hintText: 'Search Users',
+                    hintStyle: const TextStyle(color: Colours.gray_99)),
+              ),
+            ),
+            Expanded(
+              child: AzListView(
+                data: dataList,
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: dataList.length,
+                itemBuilder: (BuildContext context, int index) {
+                  UserModel model = dataList[index];
+                  return getListItem(context, model);
+                },
+                itemScrollController: itemScrollController,
+                susItemBuilder: (BuildContext context, int index) {
+                  UserModel model = dataList[index];
+                  return getSusItem(context, model.getSuspensionTag());
+                },
+                indexBarOptions: IndexBarOptions(
+                  needRebuild: true,
+                  selectTextStyle: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500),
+                  selectItemDecoration: const BoxDecoration(
+                      shape: BoxShape.circle, color: Color(0xFF333333)),
+                  indexHintWidth: 96,
+                  indexHintHeight: 97,
+                  indexHintDecoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage(
+                          Utils.getImgPath('ic_index_bar_bubble_white')),
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                );
-              } else if (chatList.contains(user)) {
-                chatList.remove(user);
-                return const SizedBox();
-              } else {
-                return const SizedBox();
-              }
-            },
-          );
-        },
+                  indexHintAlignment: Alignment.centerRight,
+                  indexHintTextStyle:
+                  const TextStyle(fontSize: 24.0, color: Colors.black87),
+                  indexHintOffset: const Offset(-30, 0),
+                ),
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

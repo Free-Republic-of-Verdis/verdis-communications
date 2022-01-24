@@ -103,7 +103,7 @@ class _RoomsPageState extends State<RoomsPage> {
                             child: !hasImage
                                 ? Text(
                               name.isEmpty ? '' : name[0].toUpperCase(),
-                              style: const TextStyle(color: Colors.white),
+                              style: TextStyle(color: Theme.of(context).primaryColorLight),
                             )
                                 : null,
                           );
@@ -141,7 +141,7 @@ class _RoomsPageState extends State<RoomsPage> {
                                   child: !hasImage
                                       ? Text(
                                     name.isEmpty ? '' : name[0].toUpperCase(),
-                                    style: const TextStyle(color: Colors.white),
+                                    style: TextStyle(color: Theme.of(context).primaryColorLight),
                                   )
                                       : null,
                                 ),
@@ -213,7 +213,7 @@ class _RoomsPageState extends State<RoomsPage> {
                     child: !hasImage
                         ? Text(
                       name.isEmpty ? '' : name[0].toUpperCase(),
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: Theme.of(context).primaryColorLight),
                     )
                         : null,
                   );
@@ -252,7 +252,7 @@ class _RoomsPageState extends State<RoomsPage> {
                           child: !hasImage
                               ? Text(
                             name.isEmpty ? '' : name[0].toUpperCase(),
-                            style: const TextStyle(color: Colors.white),
+                            style: TextStyle(color: Theme.of(context).primaryColorLight),
                           )
                               : null,
                         ),
