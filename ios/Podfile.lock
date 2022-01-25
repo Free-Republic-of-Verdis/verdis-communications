@@ -626,8 +626,8 @@ PODS:
     - Flutter
   - jitsi_meet_wrapper (0.0.1):
     - Flutter
-    - JitsiMeetSDK (= 4.0.0)
-  - JitsiMeetSDK (4.0.0)
+    - JitsiMeetSDK (= 4.1.0)
+  - JitsiMeetSDK (4.1.0)
   - leveldb-library (1.22.1)
   - nanopb (2.30908.0):
     - nanopb/decode (= 2.30908.0)
@@ -830,8 +830,8 @@ SPEC CHECKSUMS:
   GTMAppAuth: ad5c2b70b9a8689e1a04033c9369c4915bfcbe89
   GTMSessionFetcher: 43748f93435c2aa068b1cbe39655aaf600652e91
   image_picker: 9aa50e1d8cdacdbed739e925b7eea16d014367e6
-  jitsi_meet_wrapper: d649e0e69941c15d05cd7c3c0c18641e3fa6b5c5
-  JitsiMeetSDK: 4820d8408fafcd5cbd1b15fdb6086a5d89a0d010
+  jitsi_meet_wrapper: 1f304e5e3ec5276f5c163367840133ee7097ec14
+  JitsiMeetSDK: 0716f9a49278330a57d8b28304f78c25ae5ab963
   leveldb-library: 50c7b45cbd7bf543c81a468fe557a16ae3db8729
   nanopb: a0ba3315591a9ae0a16a309ee504766e90db0c96
   open_file: 02eb5cb6b21264bd3a696876f5afbfb7ca4f4b7d
