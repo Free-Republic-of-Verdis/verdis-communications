@@ -1,4 +1,3 @@
-import 'package:jitsi_meet_wrapper_platform_interface/jitsi_meet_wrapper_platform_interface.dart';
 import 'package:jitsi_meet_wrapper/jitsi_meet_wrapper.dart';
 import '../model/confrence.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -27,7 +26,7 @@ class ConfrenceService {
         userDisplayName: details.displayName,
         featureFlags: feature,
         subject: details.subject);
-    await JitsiMeetWrapperPlatformInterface.instance.joinMeeting(options: options);
+    await JitsiMeetWrapper.joinMeeting(options: options);
   }
 
   urlLaunch() {
