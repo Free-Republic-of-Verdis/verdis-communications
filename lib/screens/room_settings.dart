@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:edge_alerts/edge_alerts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -21,25 +22,34 @@ import 'package:uuid/uuid.dart';
 final TextEditingController input = TextEditingController();
 Widget finalAction = const Icon(Icons.check);
 
-class GCPage extends StatefulWidget {
-  const GCPage({Key? key, required this.chatList, required this.chatListNames}) : super(key: key);
-
-  final List<types.User> chatList;
-  final List chatListNames;
-
-  @override
-  State<GCPage> createState() => _GCPageState();
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${this.substring(1).toLowerCase()}";
+  }
 }
 
-class _GCPageState extends State<GCPage> {
+class RoomSettings extends StatefulWidget {
+  const RoomSettings({Key? key, required this.chatList, required this.initialImage, required this.initialName, required this.room}) : super(key: key);
+
+  final List<types.User> chatList;
+  final String? initialName;
+  final Uint8List? initialImage;
+  final types.Room room;
+
   @override
-  void initState() {
+  State<RoomSettings> createState() => _RoomSettingsState();
+}
+
+class _RoomSettingsState extends State<RoomSettings> {
+  CollectionReference rooms = FirebaseFirestore.instance.collection('rooms');
+
+  @override
+  initState() {
+    _profilePicFile = widget.initialImage;
     super.initState();
-    print("following is fgshj");
-    print(widget.chatList.length);
   }
 
-  Uint8List ?_profilePicFile;
+  Uint8List? _profilePicFile;
 
   // A simple usage of EditableImage.
 // This method gets called when trying to change an image.
@@ -51,41 +61,18 @@ class _GCPageState extends State<GCPage> {
 
   void _handlePressed(List userList, BuildContext context) async {
     userList = userList.toSet().toList();
+    String inputText = '';
+    setState(() {
+      finalAction = const CircularProgressIndicator(color: Colors.white,);
+    });
 
     if (input.text == "") {
-      edgeAlert(context,
-          title: 'please enter a name',
-          description:
-          "Names are mandatory, images are not!",
-          duration: 2,
-          gravity: Gravity.top,
-          icon: Icons.error_outline_outlined,
-          backgroundColor: (() {
-            if (Theme.of(context).brightness == Brightness.light) {
-              return Colors.grey;
-            } else {}
-          }()));
-    } else if (input.text.length > 28) {
-      edgeAlert(context,
-          title: 'group chat name is too long',
-          description:
-          "There is a character limit of 28 for group chat names!",
-          duration: 2,
-          gravity: Gravity.top,
-          icon: Icons.error_outline_outlined,
-          backgroundColor: (() {
-            if (Theme.of(context).brightness == Brightness.light) {
-              return Colors.grey;
-            } else {}
-          }()));
+        inputText = widget.room.name!;
     } else {
-      setState(() {
-        finalAction = const CircularProgressIndicator(color: Colors.white,);
-      });
+      inputText = input.text;
+    }
 
-      late types.Room room;
-
-      if (_profilePicFile != null) {
+      if (_profilePicFile != widget.initialImage) {
         var uuid = const Uuid();
         final _firebaseStorage = FirebaseStorage.instance;
 
@@ -102,11 +89,20 @@ class _GCPageState extends State<GCPage> {
 
         var downloadUrl = await ref.getDownloadURL();
 
-        room = await FirebaseChatCore.instance.createGroupRoom(
-            users: widget.chatList, name: input.text, imageUrl: downloadUrl);
+        await rooms.doc(widget.room.id).set(
+          {
+            'name': input.text,
+            'imageUrl': downloadUrl
+          },
+          SetOptions(merge: true),
+        );
       } else {
-        room = await FirebaseChatCore.instance.createGroupRoom(
-            users: widget.chatList, name: input.text);
+        await rooms.doc(widget.room.id).set(
+          {
+            'name': input.text,
+          },
+          SetOptions(merge: true),
+        );
       }
 
       setState(() {
@@ -114,95 +110,6 @@ class _GCPageState extends State<GCPage> {
       });
 
       Navigator.of(context).pop();
-      Navigator.of(context).pop();
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) =>
-              ChatPage(
-                backupName: "error",
-                room: room,
-                avatar: (() {
-                  var color = Colors.transparent;
-
-                  if (room.type == types.RoomType.direct) {
-                    try {
-                      final otherUser = room.users.firstWhere(
-                            (u) => u.id != FirebaseAuth.instance.currentUser!.uid,
-                      );
-
-                      color = getUserAvatarNameColor(otherUser);
-                    } catch (e) {
-                      // Do nothing if other user is not found
-                    }
-                  }
-
-                  final hasImage = room.imageUrl != null;
-                  final name = room.name ?? '';
-
-                  if (hasImage == false) {
-                    return CircleAvatar(
-                      backgroundColor: color,
-                      backgroundImage: null,
-                      radius: 20,
-                      child: !hasImage
-                          ? Text(
-                        name.isEmpty ? '' : name[0].toUpperCase(),
-                        style: TextStyle(color: Theme.of(context).primaryColorLight),
-                      )
-                          : null,
-                    );
-                  }
-                  if (room.imageUrl!.split(".").last == 'svg') {
-                    return ClipOval(
-                      child: SvgPicture.network(
-                        room.imageUrl!,
-                        width: 40,
-                        height: 40,
-                        semanticsLabel: 'profile picture',
-                        placeholderBuilder: (BuildContext context) =>
-                        const SizedBox(
-                            height: 40,
-                            width: 40,
-                            child: CircularProgressIndicator()),
-                      ),
-                    );
-                  } else {
-                    return CachedNetworkImage(
-                      imageUrl: room.imageUrl!,
-                      fit: BoxFit.fill,
-                      width: 40,
-                      height: 40,
-                      imageBuilder: (context, imageProvider) =>
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundImage: imageProvider,
-                            backgroundColor: hasImage
-                                ? Colors.transparent
-                                : color,
-                            child: !hasImage
-                                ? Text(
-                              room.name!.isEmpty
-                                  ? ''
-                                  : room.name![0].toUpperCase(),
-                              style: TextStyle(color: Theme.of(context).primaryColorLight),
-                            )
-                                : null,
-                          ),
-                      placeholder: (context, url) =>
-                      const SizedBox(
-                          height: 40,
-                          width: 40,
-                          child: CircularProgressIndicator()),
-                      errorWidget: (context, url, error) =>
-                      const SizedBox(
-                          height: 40, width: 40, child: Icon(Icons.error)),
-                    );
-                  }
-                }()),
-              ),
-        ),
-      );
-    }
   }
 
   Widget _buildAvatar(types.User user) {
@@ -272,6 +179,28 @@ class _GCPageState extends State<GCPage> {
                       fontSize: 18.0,
                     ),
                   ))),
+          trailing: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: FirebaseFirestore.instance.collection("rooms").doc(widget.room.id).snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.active) {
+                if (snapshot.hasData) {
+                  return Text((() {
+                    String? roleText = snapshot.data!.data()!['userRoles'][user
+                        .id];
+                    return (roleText ?? "user").capitalize();
+                  }()));
+                } else {
+                  return const Text("error data");
+                }
+              }
+
+              if (!snapshot.hasData) {
+                return const SizedBox();
+              }
+
+              return const SizedBox();
+            },
+          ),
         ));
   }
 
@@ -341,7 +270,7 @@ class _GCPageState extends State<GCPage> {
             return CustomInput(
               autoFillController: input,
               onChanged: (string) {},
-              hintText: 'Enter Chat Name',
+              hintText: widget.initialName ?? 'Enter Chat Name',
               onSubmitted: (string) {},
             );
           } else if (index == 3) {
@@ -369,9 +298,44 @@ class _GCPageState extends State<GCPage> {
 
           return InkWell(
             onTap: () {
-              setState(() {
-                widget.chatListNames.remove(user.firstName?.toLowerCase());
-              });
+              showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return SimpleDialog(
+                        title: const Text("Change User Role"),
+                        children: <Widget>[
+                          SimpleDialogOption(
+                            onPressed: () async {
+                              await rooms.doc(widget.room.id).set(
+                                {
+                                  'userRoles': {
+                                    user.id: "admin"
+                                  },
+                                },
+                                SetOptions(merge: true),
+                              );
+
+                              Navigator.pop(context);
+                            },
+                            child: const Text('Admin'),
+                          ),
+                          SimpleDialogOption(
+                            onPressed: () async {
+                              await rooms.doc(widget.room.id).set(
+                                {
+                                  'userRoles': {
+                                    user.id: "user"
+                                  },
+                                },
+                                SetOptions(merge: true),
+                              );
+
+                              Navigator.pop(context);
+                            },
+                            child: const Text('User'),
+                          ),
+                        ]);
+                  });
             },
             child: Container(
               padding: const EdgeInsets.symmetric(

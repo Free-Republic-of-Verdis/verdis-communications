@@ -35,8 +35,6 @@ class _GCPageState extends State<GCPage> {
   @override
   void initState() {
     super.initState();
-    print("following is fgshj");
-    print(widget.chatList.length);
   }
 
   Uint8List ?_profilePicFile;

@@ -14,7 +14,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'dart:typed_data';
+import 'package:flutter/services.dart';
+import 'package:verdiscom/screens/room_settings.dart';
 import 'package:verdiscom/service/confrence_service.dart';
 import 'package:verdiscom/model/confrence.dart' as model;
 import 'package:cloud_functions/cloud_functions.dart';
@@ -24,8 +26,10 @@ import 'home.dart';
 
 FirebaseDatabase database = FirebaseDatabase.instance;
 
-Future<void> sendNotification(String message, List idsTo, String username, String roomID) async {
-  HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('sendNotification');
+Future<void> sendNotification(
+    String message, List idsTo, String username, String roomID) async {
+  HttpsCallable callable =
+      FirebaseFunctions.instance.httpsCallable('sendNotification');
   await callable.call(<String, dynamic>{
     'message': message,
     'idsTo': idsTo,
@@ -35,7 +39,11 @@ Future<void> sendNotification(String message, List idsTo, String username, Strin
 }
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({Key? key, required this.room, required this.avatar, required this.backupName})
+  const ChatPage(
+      {Key? key,
+      required this.room,
+      required this.avatar,
+      required this.backupName})
       : super(key: key);
 
   final types.Room room;
@@ -120,8 +128,10 @@ class _ChatPageState extends State<ChatPage> {
         FirebaseChatCore.instance.sendMessage(message, widget.room.id);
         _setAttachmentUploading(false);
 
-        CollectionReference rooms = FirebaseFirestore.instance.collection('rooms');
-        CollectionReference users = FirebaseFirestore.instance.collection('users');
+        CollectionReference rooms =
+            FirebaseFirestore.instance.collection('rooms');
+        CollectionReference users =
+            FirebaseFirestore.instance.collection('users');
         var roomData = rooms.doc(widget.room.id).get();
         var roomMap = (await roomData).data()! as Map;
         roomMap['updatedAt'] = Timestamp.now();
@@ -135,12 +145,14 @@ class _ChatPageState extends State<ChatPage> {
 
           print("userList is ${userList}");
 
-          DatabaseReference ref = FirebaseDatabase.instance.ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+          DatabaseReference ref = FirebaseDatabase.instance
+              .ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
           DatabaseEvent event = await ref.once();
 
           if (event.snapshot.value == false) {
             print("sending notification");
-            await sendNotification("Sent a file", userList, username, widget.room.id);
+            await sendNotification(
+                "Sent a file", userList, username, widget.room.id);
           }
         } else if (widget.room.type == types.RoomType.group) {
           print("room is group");
@@ -151,7 +163,8 @@ class _ChatPageState extends State<ChatPage> {
           userList.remove(FirebaseAuth.instance.currentUser!.uid);
 
           for (String userID in userList) {
-            DatabaseReference ref = FirebaseDatabase.instance.ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+            DatabaseReference ref = FirebaseDatabase.instance
+                .ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
             DatabaseEvent event = await ref.once();
 
             if (event.snapshot.value == false) {
@@ -163,8 +176,8 @@ class _ChatPageState extends State<ChatPage> {
 
           if (finalUserList.isNotEmpty) {
             print("sending notification");
-            await sendNotification(
-                "Sent a file", finalUserList, "$username - ${widget.room.name!}", widget.room.id);
+            await sendNotification("Sent a file", finalUserList,
+                "$username - ${widget.room.name!}", widget.room.id);
           }
         }
       } finally {
@@ -207,8 +220,10 @@ class _ChatPageState extends State<ChatPage> {
         );
         _setAttachmentUploading(false);
 
-        CollectionReference rooms = FirebaseFirestore.instance.collection('rooms');
-        CollectionReference users = FirebaseFirestore.instance.collection('users');
+        CollectionReference rooms =
+            FirebaseFirestore.instance.collection('rooms');
+        CollectionReference users =
+            FirebaseFirestore.instance.collection('users');
         var roomData = rooms.doc(widget.room.id).get();
         var roomMap = (await roomData).data()! as Map;
         roomMap['updatedAt'] = Timestamp.now();
@@ -222,12 +237,14 @@ class _ChatPageState extends State<ChatPage> {
 
           print("userList is ${userList}");
 
-          DatabaseReference ref = FirebaseDatabase.instance.ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+          DatabaseReference ref = FirebaseDatabase.instance
+              .ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
           DatabaseEvent event = await ref.once();
 
           if (event.snapshot.value == false) {
             print("sending notification");
-            await sendNotification("Sent an image", userList, username, widget.room.id);
+            await sendNotification(
+                "Sent an image", userList, username, widget.room.id);
           }
         } else if (widget.room.type == types.RoomType.group) {
           print("room is group");
@@ -238,7 +255,8 @@ class _ChatPageState extends State<ChatPage> {
           userList.remove(FirebaseAuth.instance.currentUser!.uid);
 
           for (String userID in userList) {
-            DatabaseReference ref = FirebaseDatabase.instance.ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+            DatabaseReference ref = FirebaseDatabase.instance
+                .ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
             DatabaseEvent event = await ref.once();
 
             if (event.snapshot.value == false) {
@@ -250,8 +268,8 @@ class _ChatPageState extends State<ChatPage> {
 
           if (finalUserList.isNotEmpty) {
             print("sending notification");
-            await sendNotification(
-                "Sent an image", finalUserList, "$username - ${widget.room.name!}", widget.room.id);
+            await sendNotification("Sent an image", finalUserList,
+                "$username - ${widget.room.name!}", widget.room.id);
           }
         }
       } finally {
@@ -313,12 +331,14 @@ class _ChatPageState extends State<ChatPage> {
 
       print("userList is ${userList}");
 
-      DatabaseReference ref = FirebaseDatabase.instance.ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+      DatabaseReference ref = FirebaseDatabase.instance
+          .ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
       DatabaseEvent event = await ref.once();
 
       if (event.snapshot.value == false) {
         print("sending notification");
-        await sendNotification(message.text, userList, username, widget.room.id);
+        await sendNotification(
+            message.text, userList, username, widget.room.id);
       }
     } else if (widget.room.type == types.RoomType.group) {
       print("room is group");
@@ -331,7 +351,8 @@ class _ChatPageState extends State<ChatPage> {
       userList.remove(FirebaseAuth.instance.currentUser!.uid);
 
       for (String userID in userList) {
-        DatabaseReference ref = FirebaseDatabase.instance.ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+        DatabaseReference ref = FirebaseDatabase.instance
+            .ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
         DatabaseEvent event = await ref.once();
 
         if (event.snapshot.value == false) {
@@ -343,16 +364,15 @@ class _ChatPageState extends State<ChatPage> {
 
       if (finalUserList.isNotEmpty) {
         print("sending notification");
-        await sendNotification(
-            message.text, finalUserList, "$username - ${widget.room.name!}", widget.room.id);
+        await sendNotification(message.text, finalUserList,
+            "$username - ${widget.room.name!}", widget.room.id);
       }
     }
 
     await rooms.doc(widget.room.id).set(
-      roomMap,
-      SetOptions(merge: true),
-    );
-
+          roomMap,
+          SetOptions(merge: true),
+        );
   }
 
   void _setAttachmentUploading(bool uploading) {
@@ -390,23 +410,25 @@ class _ChatPageState extends State<ChatPage> {
           (() {
             if (widget.room.type == types.RoomType.direct) {
               types.User otherUser = widget.room.users.firstWhere(
-                    (u) => u.id != FirebaseAuth.instance.currentUser!.uid,
+                (u) => u.id != FirebaseAuth.instance.currentUser!.uid,
               );
 
               return Row(
                 children: [
                   const SizedBox(width: 10),
                   StreamBuilder<DatabaseEvent>(
-                    stream: FirebaseDatabase.instance.ref("users/${otherUser.id}").onValue,
+                    stream: FirebaseDatabase.instance
+                        .ref("users/${otherUser.id}")
+                        .onValue,
                     builder: (BuildContext context,
                         AsyncSnapshot<DatabaseEvent> snapshot) {
                       if (snapshot.hasError) {
                         return const Text("Something went wrong");
                       }
 
-                      if (snapshot.connectionState ==
-                          ConnectionState.active) {
-                        if ((snapshot.data?.snapshot.value! as Map)['status'] == true) {
+                      if (snapshot.connectionState == ConnectionState.active) {
+                        if ((snapshot.data?.snapshot.value! as Map)['status'] ==
+                            true) {
                           return Container(
                             height: 10,
                             width: 10,
@@ -437,22 +459,23 @@ class _ChatPageState extends State<ChatPage> {
             } else {
               return const SizedBox();
             }
-          } ())
+          }())
         ]),
         actions: [
-          ((){
+          (() {
             if (!kIsWeb) {
               return Padding(
                 padding: const EdgeInsets.only(right: 20.0),
                 child: IconButton(
                   onPressed: () async {
                     await ConfrenceService(
-                        instance: model.Confrence(
-                            avatarUrl: userData['imageUrl'],
-                            subject: widget.room.name ?? widget.backupName,
-                            displayName: username,
-                            emailID: FirebaseAuth.instance.currentUser!.email!,
-                            room: widget.room.id))
+                            instance: model.Confrence(
+                                avatarUrl: userData['imageUrl'],
+                                subject: widget.room.name ?? widget.backupName,
+                                displayName: username,
+                                emailID:
+                                    FirebaseAuth.instance.currentUser!.email!,
+                                room: widget.room.id))
                         .connect();
                   },
                   icon: const Icon(
@@ -468,13 +491,14 @@ class _ChatPageState extends State<ChatPage> {
                 child: GestureDetector(
                   onTap: () async {
                     await ConfrenceService(
-                        instance: model.Confrence(
-                        avatarUrl: userData['imageUrl'],
-                        subject: widget.room.name ?? widget.backupName,
-                        displayName: username,
-                        emailID: FirebaseAuth.instance.currentUser!.email!,
-                        room: widget.room.id))
-                    .urlLaunch();
+                            instance: model.Confrence(
+                                avatarUrl: userData['imageUrl'],
+                                subject: widget.room.name ?? widget.backupName,
+                                displayName: username,
+                                emailID:
+                                    FirebaseAuth.instance.currentUser!.email!,
+                                room: widget.room.id))
+                        .urlLaunch();
                   },
                   child: const Icon(
                     Icons.call,
@@ -485,6 +509,32 @@ class _ChatPageState extends State<ChatPage> {
               );
             }
           }()),
+          Padding(
+            padding: const EdgeInsets.only(right: 20.0),
+            child: IconButton(
+              onPressed: () async {
+                Uint8List? bytes;
+                if (widget.room.imageUrl != null) {
+                  bytes = (await NetworkAssetBundle(Uri.parse(widget.room.imageUrl!)).load(widget.room.imageUrl!))
+                      .buffer
+                      .asUint8List();
+                }
+
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => RoomSettings(
+                            chatList: widget.room.users,
+                            initialImage: bytes,
+                            initialName: widget.room.name,
+                            room: widget.room)));
+              },
+              icon: const Icon(
+                Icons.settings,
+                size: 30,
+              ),
+            ),
+          )
         ],
       ),
       body: StreamBuilder<types.Room>(
@@ -504,7 +554,9 @@ class _ChatPageState extends State<ChatPage> {
                     if (Theme.of(context).brightness == Brightness.light) {
                       return const DefaultChatTheme();
                     } else {
-                      return const DarkChatTheme(inputPadding: EdgeInsets.fromLTRB(24, 20, 24, 20), inputMargin: EdgeInsets.zero);
+                      return const DarkChatTheme(
+                          inputPadding: EdgeInsets.fromLTRB(24, 20, 24, 20),
+                          inputMargin: EdgeInsets.zero);
                     }
                   }()),
                   isAttachmentUploading: _isAttachmentUploading,
