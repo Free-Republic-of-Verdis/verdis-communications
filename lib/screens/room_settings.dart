@@ -66,7 +66,7 @@ class _RoomSettingsState extends State<RoomSettings> {
       finalAction = const CircularProgressIndicator(color: Colors.white,);
     });
 
-    if (input.text == "") {
+    if (input.text.isEmpty) {
         inputText = widget.room.name!;
     } else {
       inputText = input.text;
@@ -226,7 +226,7 @@ class _RoomSettingsState extends State<RoomSettings> {
         title: const Text('Group Chat Options'),
       ),
       body: ListView.builder(
-        itemCount: widget.chatList.length + 6,
+        itemCount: widget.chatList.length + 7,
         itemBuilder: (context, index) {
           if (index == 0) {
             return Padding(
@@ -278,13 +278,26 @@ class _RoomSettingsState extends State<RoomSettings> {
               height: 40,
             );
           } else if (index == 4) {
-            return const Center(
-                child: Text(
-                  "Members:",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
+            return Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          fullscreenDialog: true,
+                          builder: (context) => UsersPage(initialIDList: widget.chatList.map((e) => e.id).toList(), isOptionsPage: true, roomID: widget.room.id),
+                        ),
+                      );
+                    }, icon: const Icon(Icons.edit)),
+                    const Text(
+                      "Members:",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
+                    ),
+                  ],
                 ));
           } else if (index == 5) {
             return const SizedBox(
@@ -293,8 +306,44 @@ class _RoomSettingsState extends State<RoomSettings> {
           }
 
           index -= 6;
+          late types.User user;
 
-          final user = widget.chatList[index];
+          try {
+            user = widget.chatList[index];
+          } catch (e) {
+            return Center(
+              child: Column(
+                children: [
+                  SizedBox(height: 50),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        height: 50,
+                          width: 150,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.all(Radius.circular(12)),
+                            color: Colors.red[400]!
+                          ),
+                          child: Center(child: Text("Leave Group Chat", textAlign: TextAlign.center))
+                      ),
+                      SizedBox(width: 20),
+                      Container(
+                          height: 50,
+                          width: 150,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.all(Radius.circular(12)),
+                              color: Colors.red[400]!
+                          ),
+                          child: Center(child: Text("Delete Group Chat", textAlign: TextAlign.center))
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 50),
+                ],
+              ),
+            );
+          }
 
           return InkWell(
             onTap: () {

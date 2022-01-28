@@ -14,6 +14,8 @@ import 'package:verdiscom/util/util.dart';
 import 'chat.dart';
 import 'create_group_chat.dart';
 
+Widget finalAction = const Icon(Icons.check);
+
 List<types.User> chatList = [];
 List chatListNames = [];
 
@@ -158,8 +160,14 @@ class UsersPage extends StatefulWidget {
   const UsersPage({
     Key? key,
     this.fromType,
+    this.initialIDList,
+    this.isOptionsPage,
+    this.roomID
   }) : super(key: key);
   final int? fromType;
+  final List? initialIDList;
+  final bool? isOptionsPage;
+  final String? roomID;
 
   @override
   _UsersPageState createState() => _UsersPageState();
@@ -180,6 +188,16 @@ class _UsersPageState extends State<UsersPage> {
 
   @override
   void initState() {
+    if (widget.initialIDList != null) {
+      for (var element in widget.initialIDList!) {
+        boolMap[element] = const CircleAvatar(
+          radius: 20,
+          backgroundColor: Colors.transparent,
+          child: Icon(Icons.done),
+        );
+      }
+    }
+
     super.initState();
     chatListNames = [];
     chatList = [];
@@ -300,13 +318,14 @@ class _UsersPageState extends State<UsersPage> {
         transitionBuilder: (Widget child, Animation<double> animation) {
           return FadeTransition(child: child, opacity: animation);
         },
-        child: boolMap[model] ?? _buildAvatar(model.avatarUrl),
+        child: boolMap[model.user.id] ?? _buildAvatar(model.avatarUrl),
       ),
       title: Text(model.name),
       onTap: () {
         setState(() {
-          if (boolMap[model] == null) {
-            boolMap[model] = const CircleAvatar(
+
+          if (boolMap[model.user.id] == null) {
+            boolMap[model.user.id] = const CircleAvatar(
               radius: 20,
               backgroundColor: Colors.transparent,
               child: Icon(Icons.done),
@@ -316,7 +335,7 @@ class _UsersPageState extends State<UsersPage> {
             chatListNames = chatListNames.toSet().toList();
             chatList = chatList.toSet().toList();
           } else {
-            boolMap[model] = null;
+            boolMap[model.user.id] = null;
             chatListNames.remove(model.name);
             chatList.remove(model.user);
             chatListNames = chatListNames.toSet().toList();
@@ -331,11 +350,37 @@ class _UsersPageState extends State<UsersPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _handlePressed(chatList, context);
+        onPressed: () async {
+          if (widget.isOptionsPage == true) {
+            setState(() {
+              finalAction = const CircularProgressIndicator(color: Colors.white,);
+            });
+            List returnList = boolMap.entries.map((e) {
+              if (e.value != null) {
+                return e.key;
+              }
+            }).toList();
+            returnList.add(FirebaseAuth.instance.currentUser!.uid);
+            returnList = returnList.where((c) => c != null).toList();
+
+            await FirebaseFirestore.instance.collection('rooms').doc(widget.roomID).set(
+              {
+                'userIds': returnList.toSet().toList(),
+              },
+              SetOptions(merge: true),
+            );
+            setState(() {
+              finalAction = const Icon(Icons.check);
+            });
+            Navigator.pop(context);
+            Navigator.pop(context);
+            Navigator.pop(context);
+          } else {
+            _handlePressed(chatList, context);
+          }
         },
         backgroundColor: Theme.of(context).colorScheme.secondary,
-        child: const Icon(Icons.check),
+        child: finalAction,
       ),
       appBar: AppBar(
         foregroundColor: Theme.of(context).appBarTheme.toolbarTextStyle!.color,
