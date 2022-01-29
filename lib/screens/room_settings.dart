@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:edge_alerts/edge_alerts.dart';
+import 'package:verdiscom/util/const.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -29,12 +29,13 @@ extension StringExtension on String {
 }
 
 class RoomSettings extends StatefulWidget {
-  const RoomSettings({Key? key, required this.chatList, required this.initialImage, required this.initialName, required this.room}) : super(key: key);
+  const RoomSettings({Key? key, required this.chatList, required this.initialImage, required this.initialName, required this.room, required this.isAdmin}) : super(key: key);
 
   final List<types.User> chatList;
   final String? initialName;
-  final Uint8List? initialImage;
+  final Widget? initialImage;
   final types.Room room;
+  final bool isAdmin;
 
   @override
   State<RoomSettings> createState() => _RoomSettingsState();
@@ -45,7 +46,6 @@ class _RoomSettingsState extends State<RoomSettings> {
 
   @override
   initState() {
-    _profilePicFile = widget.initialImage;
     super.initState();
   }
 
@@ -207,13 +207,19 @@ class _RoomSettingsState extends State<RoomSettings> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _handlePressed(widget.chatList, context);
-        },
-        backgroundColor: Theme.of(context).colorScheme.secondary,
-        child: finalAction,
-      ),
+      floatingActionButton: (() {
+        if (widget.isAdmin) {
+          return FloatingActionButton(
+            onPressed: () {
+              _handlePressed(widget.chatList, context);
+            },
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+            child: finalAction,
+          );
+        } else {
+          return null;
+        }
+      } ()),
       appBar: AppBar(
         foregroundColor: Theme.of(context).appBarTheme.toolbarTextStyle!.color,
         backgroundColor: (() {
@@ -232,6 +238,8 @@ class _RoomSettingsState extends State<RoomSettings> {
             return Padding(
               padding: const EdgeInsets.fromLTRB(40, 50, 40, 0),
               child: EditableImage(
+                isEditable: widget.isAdmin,
+                widgetDefault: widget.initialImage,
 // Define the method that will run on the change process of the image.
                 onChange: (file) => _directUpdateImage(file),
 
@@ -267,12 +275,17 @@ class _RoomSettingsState extends State<RoomSettings> {
               height: 20,
             );
           } else if (index == 2) {
-            return CustomInput(
-              autoFillController: input,
-              onChanged: (string) {},
-              hintText: widget.initialName ?? 'Enter Chat Name',
-              onSubmitted: (string) {},
-            );
+            if (widget.isAdmin == true) {
+              return CustomInput(
+                autoFillController: input,
+                onChanged: (string) {},
+                hintText: widget.initialName ?? 'Enter Chat Name',
+                onSubmitted: (string) {},
+              );
+            } else {
+              return Center(child: Text(widget.initialName ?? 'No Chat Name', style: const TextStyle(
+                  fontSize: 24.0, fontWeight: FontWeight.w600), textAlign: TextAlign.center,));
+            }
           } else if (index == 3) {
             return const SizedBox(
               height: 40,
@@ -282,14 +295,20 @@ class _RoomSettingsState extends State<RoomSettings> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          fullscreenDialog: true,
-                          builder: (context) => UsersPage(initialIDList: widget.chatList.map((e) => e.id).toList(), isOptionsPage: true, roomID: widget.room.id),
-                        ),
-                      );
-                    }, icon: const Icon(Icons.edit)),
+                    (() {
+                      if (widget.isAdmin) {
+                        return IconButton(onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              fullscreenDialog: true,
+                              builder: (context) => UsersPage(initialIDList: widget.chatList.map((e) => e.id).toList(), isOptionsPage: true, roomID: widget.room.id),
+                            ),
+                          );
+                        }, icon: const Icon(Icons.edit));
+                      } else {
+                        return const SizedBox();
+                      }
+                    } ()),
                     const Text(
                       "Members:",
                       style: TextStyle(
@@ -318,82 +337,205 @@ class _RoomSettingsState extends State<RoomSettings> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
+                      GestureDetector(
+                        onTap: () {
+                          showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: const Text('Are you sure you want to leave?'),
+                                  content:
+                                  Text('This action cannot be undone'),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () async {
+                                        var roomData = rooms.doc(widget.room.id).get();
+                                        var roomMap = (await roomData).data()! as Map;
+                                        List adminList = roomMap['userRoles'].entries.map((e) {
+                                          if (e.value == "admin") {
+                                            return e.key;
+                                          }
+                                        }).toList();
+                                        adminList = adminList.where((c) => c != null).toList();
+
+                                        if (adminList.length == 1 && adminList.contains(FirebaseAuth.instance.currentUser!.uid)) {
+                                          Navigator.pop(context);
+                                          showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                return AlertDialog(
+                                                  title: const Text('Error!'),
+                                                  content:
+                                                  const Text('Please select a new admin before you leave'),
+                                                  actions: <Widget>[
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.pop(context);
+                                                      },
+                                                      child: const Text('OK'),
+                                                    ),
+                                                  ],
+                                                );
+                                              });
+                                        } else {
+                                          Navigator.pop(context);
+                                          Navigator.pop(context);
+                                          Navigator.pop(context);
+
+                                          List returnList = roomMap['userIds'];
+                                          returnList.remove(
+                                              FirebaseAuth.instance.currentUser!
+                                                  .uid);
+
+                                          await rooms.doc(widget.room.id).set(
+                                            {
+                                              'userIds': returnList,
+                                            },
+                                            SetOptions(merge: true),
+                                          );
+                                        }
+                                      },
+                                      child: const Text('Confirm', style: TextStyle(color: Colors.red),),
+                                    ),
+                                  ],
+                                );
+                              });
+                        },
+                      child: Container(
                         height: 50,
                           width: 150,
                           decoration: BoxDecoration(
                               borderRadius: BorderRadius.all(Radius.circular(12)),
                             color: Colors.red[400]!
                           ),
-                          child: Center(child: Text("Leave Group Chat", textAlign: TextAlign.center))
+                          child: Center(child: Text("Leave Group Chat", textAlign: TextAlign.center, style: TextStyle(color: Colors.white),))
                       ),
-                      SizedBox(width: 20),
-                      Container(
-                          height: 50,
-                          width: 150,
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.all(Radius.circular(12)),
-                              color: Colors.red[400]!
-                          ),
-                          child: Center(child: Text("Delete Group Chat", textAlign: TextAlign.center))
-                      ),
+            ),
+                      (() {
+                        if (widget.isAdmin) {
+                          return SizedBox(width: 20);
+                        } else {
+                          return const SizedBox();
+                        }
+                      } ()),
+                      (() {
+                        if (widget.isAdmin) {
+                          return GestureDetector(
+                            onTap: () {
+                              showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: const Text('Are you sure you want to delete the group chat?'),
+                                      content:
+                                      Text('This action cannot be undone'),
+                                      actions: <Widget>[
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          child: const Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            Navigator.pop(context);
+                                            Navigator.pop(context);
+                                            Navigator.pop(context);
+                                            await rooms.doc(widget.room.id).delete();
+                                          },
+                                          child: const Text('Confirm', style: TextStyle(color: Colors.red),),
+                                        ),
+                                      ],
+                                    );
+                                  });
+                            },
+                            child: Container(
+                                height: 50,
+                                width: 150,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                                    color: Colors.red[400]!
+                                ),
+                                child: Center(child: Text("Delete Group Chat", textAlign: TextAlign.center, style: TextStyle(color: Colors.white),))
+                            ),
+                          );
+                        } else {
+                          return const SizedBox();
+                        }
+                      } ()),
                     ],
                   ),
-                  SizedBox(height: 50),
+                  const SizedBox(height: 50),
                 ],
               ),
             );
           }
 
-          return InkWell(
-            onTap: () {
-              showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return SimpleDialog(
-                        title: const Text("Change User Role"),
-                        children: <Widget>[
-                          SimpleDialogOption(
-                            onPressed: () async {
-                              await rooms.doc(widget.room.id).set(
-                                {
-                                  'userRoles': {
-                                    user.id: "admin"
-                                  },
-                                },
-                                SetOptions(merge: true),
-                              );
-
-                              Navigator.pop(context);
-                            },
-                            child: const Text('Admin'),
-                          ),
-                          SimpleDialogOption(
-                            onPressed: () async {
-                              await rooms.doc(widget.room.id).set(
-                                {
-                                  'userRoles': {
-                                    user.id: "user"
-                                  },
-                                },
-                                SetOptions(merge: true),
-                              );
-
-                              Navigator.pop(context);
-                            },
-                            child: const Text('User'),
-                          ),
-                        ]);
-                  });
-            },
-            child: Container(
+          if (user.id == FirebaseAuth.instance.currentUser!.uid || widget.isAdmin != true) {
+            return Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: 4,
                 vertical: 4,
               ),
               child: _buildAvatar(user),
-            ),
-          );
+            );
+          } else {
+            return InkWell(
+              onTap: () {
+                showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return SimpleDialog(
+                          title: const Text("Change User Role"),
+                          children: <Widget>[
+                            SimpleDialogOption(
+                              onPressed: () async {
+                                await rooms.doc(widget.room.id).set(
+                                  {
+                                    'userRoles': {
+                                      user.id: "admin"
+                                    },
+                                  },
+                                  SetOptions(merge: true),
+                                );
+
+                                Navigator.pop(context);
+                              },
+                              child: const Text('Admin'),
+                            ),
+                            SimpleDialogOption(
+                              onPressed: () async {
+                                await rooms.doc(widget.room.id).set(
+                                  {
+                                    'userRoles': {
+                                      user.id: "user"
+                                    },
+                                  },
+                                  SetOptions(merge: true),
+                                );
+
+                                Navigator.pop(context);
+                              },
+                              child: const Text('User'),
+                            ),
+                          ]);
+                    });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 4,
+                ),
+                child: _buildAvatar(user),
+              ),
+            );
+          }
         },
       ),
     );

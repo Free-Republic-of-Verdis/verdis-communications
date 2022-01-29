@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_firebase_chat_core/flutter_firebase_chat_core.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
@@ -17,12 +18,16 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:verdiscom/screens/room_settings.dart';
+import 'package:verdiscom/screens/user_view.dart';
 import 'package:verdiscom/service/confrence_service.dart';
 import 'package:verdiscom/model/confrence.dart' as model;
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 import 'home.dart';
+
+CollectionReference rooms = FirebaseFirestore.instance.collection('rooms');
+CollectionReference users = FirebaseFirestore.instance.collection('users');
 
 FirebaseDatabase database = FirebaseDatabase.instance;
 
@@ -128,10 +133,6 @@ class _ChatPageState extends State<ChatPage> {
         FirebaseChatCore.instance.sendMessage(message, widget.room.id);
         _setAttachmentUploading(false);
 
-        CollectionReference rooms =
-            FirebaseFirestore.instance.collection('rooms');
-        CollectionReference users =
-            FirebaseFirestore.instance.collection('users');
         var roomData = rooms.doc(widget.room.id).get();
         var roomMap = (await roomData).data()! as Map;
         roomMap['updatedAt'] = Timestamp.now();
@@ -146,7 +147,7 @@ class _ChatPageState extends State<ChatPage> {
           print("userList is ${userList}");
 
           DatabaseReference ref = FirebaseDatabase.instance
-              .ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+              .ref("users/${userList[0]}/status");
           DatabaseEvent event = await ref.once();
 
           if (event.snapshot.value == false) {
@@ -164,7 +165,7 @@ class _ChatPageState extends State<ChatPage> {
 
           for (String userID in userList) {
             DatabaseReference ref = FirebaseDatabase.instance
-                .ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+                .ref("users/$userID/status");
             DatabaseEvent event = await ref.once();
 
             if (event.snapshot.value == false) {
@@ -238,7 +239,7 @@ class _ChatPageState extends State<ChatPage> {
           print("userList is ${userList}");
 
           DatabaseReference ref = FirebaseDatabase.instance
-              .ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+              .ref("users/${userList[0]}/status");
           DatabaseEvent event = await ref.once();
 
           if (event.snapshot.value == false) {
@@ -256,7 +257,7 @@ class _ChatPageState extends State<ChatPage> {
 
           for (String userID in userList) {
             DatabaseReference ref = FirebaseDatabase.instance
-                .ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+                .ref("users/$userID/status");
             DatabaseEvent event = await ref.once();
 
             if (event.snapshot.value == false) {
@@ -332,7 +333,7 @@ class _ChatPageState extends State<ChatPage> {
       print("userList is ${userList}");
 
       DatabaseReference ref = FirebaseDatabase.instance
-          .ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+          .ref("users/${userList[0]}/status");
       DatabaseEvent event = await ref.once();
 
       if (event.snapshot.value == false) {
@@ -352,7 +353,7 @@ class _ChatPageState extends State<ChatPage> {
 
       for (String userID in userList) {
         DatabaseReference ref = FirebaseDatabase.instance
-            .ref("users/${FirebaseAuth.instance.currentUser!.uid}/status");
+            .ref("users/$userID/status");
         DatabaseEvent event = await ref.once();
 
         if (event.snapshot.value == false) {
@@ -393,28 +394,37 @@ class _ChatPageState extends State<ChatPage> {
             return Colors.grey.shade800;
           }
         }()),
-        title: Row(children: [
-          Hero(
-            tag: widget.room.name ?? widget.backupName,
-            child: widget.avatar,
-          ),
-          const SizedBox(width: 15),
-          Flexible(
-            child: Text(
-              widget.room.name ?? widget.backupName,
-              overflow: TextOverflow.fade,
-              style: TextStyle(
-                  color: Theme.of(context).appBarTheme.toolbarTextStyle!.color),
-            ),
-          ),
-          (() {
+        title: (() {
             if (widget.room.type == types.RoomType.direct) {
               types.User otherUser = widget.room.users.firstWhere(
                 (u) => u.id != FirebaseAuth.instance.currentUser!.uid,
               );
 
               return Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
+                  InkWell(
+                    onTap: () async {
+                      Map userMap = (await users.doc(otherUser.id).get()).data()! as Map;
+                      Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                      builder: (_) => UserView(profile: widget.avatar, userData: userMap, isAdmin: false, userID: otherUser.id,)));
+                    },
+                    child: Hero(
+                      tag: widget.room.name ?? widget.backupName,
+                      child: widget.avatar,
+                    ),
+                  ),
+                  const SizedBox(width: 15),
+                  Flexible(
+                    child: Text(
+                      widget.room.name ?? widget.backupName,
+                      overflow: TextOverflow.fade,
+                      style: TextStyle(
+                          color: Theme.of(context).appBarTheme.toolbarTextStyle!.color),
+                    ),
+                  ),
                   const SizedBox(width: 10),
                   StreamBuilder<DatabaseEvent>(
                     stream: FirebaseDatabase.instance
@@ -426,9 +436,18 @@ class _ChatPageState extends State<ChatPage> {
                         return const Text("Something went wrong");
                       }
 
-                      if (snapshot.connectionState == ConnectionState.active) {
-                        if ((snapshot.data?.snapshot.value! as Map)['status'] ==
+                      bool status = false;
+                      try {
+                        if ((snapshot.data?.snapshot.value as Map)['status'] ==
                             true) {
+                          status = true;
+                        }
+                      } catch (e) {
+                        status = false;
+                      }
+
+                      if (snapshot.connectionState == ConnectionState.active) {
+                        if (status == true) {
                           return Container(
                             height: 10,
                             width: 10,
@@ -451,21 +470,43 @@ class _ChatPageState extends State<ChatPage> {
                         }
                       }
 
-                      return const SizedBox();
+                      return const SizedBox(height: 1, width: 1);
                     },
                   ),
                 ],
               );
             } else {
-              return const SizedBox();
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Hero(
+                    tag: widget.room.name ?? widget.backupName,
+                    child: widget.avatar,
+                  ),
+                  const SizedBox(width: 15),
+                  Flexible(
+                    child: Text(
+                      widget.room.name ?? widget.backupName,
+                      overflow: TextOverflow.fade,
+                      style: TextStyle(
+                          color: Theme.of(context).appBarTheme.toolbarTextStyle!.color),
+                    ),
+                  ),
+                ],
+              );
             }
-          }())
-        ]),
+          }()),
         actions: [
           (() {
             if (!kIsWeb) {
               return Padding(
-                padding: const EdgeInsets.only(right: 20.0),
+                padding: (() {
+                  if (widget.room.type != types.RoomType.group) {
+                    return const EdgeInsets.only(right: 20.0);
+                  } else {
+                    return const EdgeInsets.only(right: 5.0);
+                  }
+                }()),
                 child: IconButton(
                   onPressed: () async {
                     await ConfrenceService(
@@ -487,7 +528,13 @@ class _ChatPageState extends State<ChatPage> {
               );
             } else {
               return Padding(
-                padding: const EdgeInsets.only(right: 20.0),
+                padding: (() {
+                  if (widget.room.type != types.RoomType.group) {
+                    return const EdgeInsets.only(right: 20.0);
+                  } else {
+                    return const EdgeInsets.only(right: 5.0);
+                  }
+                }()),
                 child: GestureDetector(
                   onTap: () async {
                     await ConfrenceService(
@@ -509,32 +556,45 @@ class _ChatPageState extends State<ChatPage> {
               );
             }
           }()),
-          Padding(
-            padding: const EdgeInsets.only(right: 20.0),
-            child: IconButton(
-              onPressed: () async {
-                Uint8List? bytes;
-                if (widget.room.imageUrl != null) {
-                  bytes = (await NetworkAssetBundle(Uri.parse(widget.room.imageUrl!)).load(widget.room.imageUrl!))
-                      .buffer
-                      .asUint8List();
-                }
+          (() {
+            if (widget.room.type == types.RoomType.group) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 20.0),
+                child: IconButton(
+                  onPressed: () async {
+                    var roomData = rooms.doc(widget.room.id).get();
+                    var roomMap = (await roomData).data()! as Map;
+                    List adminList = roomMap['userRoles'].entries.map((e) {
+                      if (e.value == "admin") {
+                        return e.key;
+                      }
+                    }).toList();
+                    adminList = adminList.where((c) => c != null).toList();
 
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => RoomSettings(
-                            chatList: widget.room.users,
-                            initialImage: bytes,
-                            initialName: widget.room.name,
-                            room: widget.room)));
-              },
-              icon: const Icon(
-                Icons.settings,
-                size: 30,
-              ),
-            ),
-          )
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => RoomSettings(
+                                isAdmin: adminList.contains(
+                                    FirebaseAuth.instance.currentUser!.uid),
+                                chatList: widget.room.users,
+                                initialImage: Hero(
+                                  tag: widget.room.name ?? widget.backupName,
+                                  child: widget.avatar,
+                                ),
+                                initialName: widget.room.name,
+                                room: widget.room)));
+                  },
+                  icon: const Icon(
+                    Icons.settings,
+                    size: 30,
+                  ),
+                ),
+              );
+            } else {
+              return const SizedBox();
+            }
+          }())
         ],
       ),
       body: StreamBuilder<types.Room>(

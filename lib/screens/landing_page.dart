@@ -8,7 +8,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
-CollectionReference users = FirebaseFirestore.instance.collection('users');
+CollectionReference global = FirebaseFirestore.instance.collection('global');
 
 class LandingPage extends StatelessWidget {
   final Future<FirebaseApp> _initialization = Firebase.initializeApp();
@@ -56,8 +56,8 @@ class LandingPage extends StatelessWidget {
                   return LoginPage();
                 } else {
                   return StreamBuilder<DocumentSnapshot>(
-                    stream: users
-                        .doc(FirebaseAuth.instance.currentUser!.uid)
+                    stream: global
+                        .doc("private")
                         .snapshots(),
                     builder: (BuildContext context,
                         AsyncSnapshot<DocumentSnapshot> snapshot) {
@@ -73,7 +73,7 @@ class LandingPage extends StatelessWidget {
                         Map<String, dynamic> data =
                             snapshot.data!.data() as Map<String, dynamic>;
 
-                        if (data['approved'] == true) {
+                        if (data['approved'].contains(FirebaseAuth.instance.currentUser!.uid)) {
                           return const Home();
                         } else {
                           return Container(

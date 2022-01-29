@@ -33,6 +33,7 @@ class EditableImage extends StatelessWidget {
     this.image,
     this.size,
     this.imageBorder,
+    this.widgetDefault,
     this.imageDefault,
     this.imageDefaultColor,
     this.imageDefaultBackgroundColor,
@@ -42,11 +43,13 @@ class EditableImage extends StatelessWidget {
     this.editIconBackgroundColor,
     this.editIconBorder,
     this.editIconPosition,
+    this.isEditable,
   }) : super(key: key);
 
   /// A Function to access and override the process on
   /// change of image.
   final Function(Uint8List file) onChange;
+  final bool? isEditable;
 
   /// An Image widget that shows the main profile picture, etc.
   final Image? image;
@@ -82,6 +85,8 @@ class EditableImage extends StatelessWidget {
   /// A Color to set default background color of the edit
   /// icon.
   final Color? editIconBackgroundColor;
+
+  final Widget? widgetDefault;
 
   /// A BoxBorder to add a border to the edit icon.
   final Border? editIconBorder;
@@ -157,19 +162,26 @@ class EditableImage extends StatelessWidget {
               /// Builds main image.
               /// For example, profile picture.
               _buildImage(),
-              Align(
-                alignment: _getPosition(),
-                child: InkWell(
-                  overlayColor: MaterialStateProperty.all(Colors.transparent),
-                  highlightColor: Colors.transparent,
+              (() {
+                if (isEditable == true) {
+                  return Align(
+                    alignment: _getPosition(),
+                    child: InkWell(
+                      overlayColor: MaterialStateProperty.all(
+                          Colors.transparent),
+                      highlightColor: Colors.transparent,
 
-                  /// When edit icon tapped, calls _getImage() method.
-                  onTap: () => _getImage(context),
+                      /// When edit icon tapped, calls _getImage() method.
+                      onTap: () => _getImage(context),
 
-                  /// Builds edit icon.
-                  child: _buildIcon(),
-                ),
-              ),
+                      /// Builds edit icon.
+                      child: _buildIcon(),
+                    ),
+                  );
+                } else {
+                  return const SizedBox();
+                }
+              } ()),
             ],
           ),
         ),
@@ -187,7 +199,7 @@ class EditableImage extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       child: ClipOval(
-        child: image ??
+        child: image ?? widgetDefault ??
             Icon(
               imageDefault ?? Icons.person,
               size: size != null ? (size ?? 140.0) * 0.75 : 105.0,

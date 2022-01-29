@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:edge_alerts/edge_alerts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -106,6 +107,15 @@ class _GCPageState extends State<GCPage> {
         room = await FirebaseChatCore.instance.createGroupRoom(
             users: widget.chatList, name: input.text);
       }
+
+      FirebaseFirestore.instance.collection('rooms').doc(room.id).set(
+        {
+          'userRoles': {
+            FirebaseAuth.instance.currentUser!.uid: "admin"
+          }
+        },
+        SetOptions(merge: true),
+      );
 
       setState(() {
         finalAction = const Icon(Icons.check);

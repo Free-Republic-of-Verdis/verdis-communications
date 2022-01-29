@@ -5,10 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_firebase_chat_core/flutter_firebase_chat_core.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:verdiscom/screens/user_view.dart';
 import '../util/util.dart';
 
 late Widget profile;
 final TextEditingController input = TextEditingController();
+CollectionReference global = FirebaseFirestore.instance.collection('global');
+CollectionReference users = FirebaseFirestore.instance.collection('users');
 
 class ApproveUsersPage extends StatefulWidget {
   const ApproveUsersPage({Key? key}) : super(key: key);
@@ -36,8 +39,6 @@ class _ApproveUsersPageState extends State<ApproveUsersPage> {
     final color = getUserAvatarNameColor(user);
     final hasImage = user.imageUrl != null;
     final name = getUserName(user);
-
-    CollectionReference users = FirebaseFirestore.instance.collection('users');
 
     return Card(
         elevation: 4,
@@ -109,8 +110,9 @@ class _ApproveUsersPageState extends State<ApproveUsersPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
           StreamBuilder<DocumentSnapshot>(
-          stream: users
-                  .doc(user.id).snapshots(),
+          stream: global
+              .doc("private")
+              .snapshots(),
           builder: (BuildContext context,
               AsyncSnapshot<DocumentSnapshot> snapshot) {
             if (snapshot.hasError) {
@@ -128,13 +130,15 @@ class _ApproveUsersPageState extends State<ApproveUsersPage> {
               Map<String, dynamic> data =
               snapshot.data!.data() as Map<String, dynamic>;
 
-              if (data['approved'] == true) {
+              if (data['approved'].contains(user.id)) {
                 return IconButton(
                     onPressed: () {
                       setState(() {
-                        users.doc(user.id).set(
+                        List returnList = data['approved'].toSet().toList();
+                        returnList.remove(user.id);
+                        global.doc("private").set(
                           {
-                            'approved': false,
+                            'approved': returnList.toSet().toList(),
                           },
                           SetOptions(merge: true),
                         );
@@ -166,9 +170,11 @@ class _ApproveUsersPageState extends State<ApproveUsersPage> {
                 return IconButton(
                     onPressed: () {
                       setState(() {
-                        users.doc(user.id).set(
+                        List returnList = data['approved'].toSet().toList();
+                        returnList.add(user.id);
+                        global.doc("private").set(
                           {
-                            'approved': true,
+                            'approved': returnList.toSet().toList(),
                           },
                           SetOptions(merge: true),
                         );
@@ -251,7 +257,64 @@ class _ApproveUsersPageState extends State<ApproveUsersPage> {
                       horizontal: 4,
                       vertical: 4,
                     ),
-                    child: _buildAvatar(user),
+                    child: InkWell(
+                      onTap: () async {
+                        Map userMap = (await users.doc(user.id).get()).data()! as Map;
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => UserView(profile: (() {
+                                  final color = getUserAvatarNameColor(user);
+                                  final hasImage = user.imageUrl != null;
+                                  final name = getUserName(user);
+
+                                  if (user.imageUrl!.split(".").last == 'svg') {
+                                    profile = ClipOval(
+                                      child: SvgPicture.network(
+                                        user.imageUrl!,
+                                        width: 40,
+                                        height: 40,
+                                        semanticsLabel: 'profile picture',
+                                        placeholderBuilder: (BuildContext context) =>
+                                        const SizedBox(
+                                            height: 40,
+                                            width: 40,
+                                            child: CircularProgressIndicator()),
+                                      ),
+                                    );
+
+                                    return profile;
+                                  } else {
+                                    profile = CachedNetworkImage(
+                                      imageUrl: user.imageUrl!,
+                                      fit: BoxFit.fill,
+                                      width: 40,
+                                      height: 40,
+                                      imageBuilder: (context, imageProvider) => CircleAvatar(
+                                        radius: 20,
+                                        backgroundImage: imageProvider,
+                                        backgroundColor: hasImage ? Colors.transparent : color,
+                                        child: !hasImage
+                                            ? Text(
+                                          name.isEmpty ? '' : name[0].toUpperCase(),
+                                          style: TextStyle(color: Theme.of(context).primaryColorLight),
+                                        )
+                                            : null,
+                                      ),
+                                      placeholder: (context, url) => const SizedBox(
+                                          height: 40,
+                                          width: 40,
+                                          child: CircularProgressIndicator()),
+                                      errorWidget: (context, url, error) => const SizedBox(
+                                          height: 40, width: 40, child: Icon(Icons.error)),
+                                    );
+
+                                    return profile;
+                                  }
+                                }()), userData: userMap, isAdmin: true, userID: user.id,)));
+                      },
+                        child: _buildAvatar(user)
+                    ),
                   );
                 },
               ),
