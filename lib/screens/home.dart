@@ -9,6 +9,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:verdiscom/screens/landing_page.dart';
 import 'package:verdiscom/screens/register_page.dart';
 import 'package:verdiscom/screens/rooms.dart';
@@ -54,7 +55,7 @@ final beforeNonLeadingCapitalLetter = RegExp(r"(?=(?!^)[A-Z])");
 List<String> splitPascalCase(String input) =>
     input.split(beforeNonLeadingCapitalLetter);
 
-enum Section { about, home }
+enum Section { developer, home, about }
 Section section = Section.home;
 
 extension StringExtension on String {
@@ -674,6 +675,96 @@ class _HomeState extends State<Home>
                       Theme.of(context).appBarTheme.toolbarTextStyle!.color)),
           backgroundColor: Theme.of(context).primaryColor),
       body: Padding(
+          padding: const EdgeInsets.fromLTRB(0, 25, 0, 0),
+          child: Center(
+            child: ListView(
+              children: [
+                const SizedBox(height: 60,),
+                Padding(
+                  padding: const EdgeInsets.all(36),
+                  child: SizedBox(
+                    height: 300,
+                    width: 300,
+                    child: SvgPicture.asset('assets/icon/app_icon.svg',
+                        semanticsLabel: 'Verdis Communications logo'),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Center(
+                  child: FutureBuilder<PackageInfo>(
+                      future: PackageInfo.fromPlatform(),
+                      builder: (context, packageInfo) {
+                        if (packageInfo.connectionState == ConnectionState.done) {
+                          try {
+                            return Text(
+                                "Platform: ${Platform.operatingSystem} | App Version: ${packageInfo.data!.version} (${packageInfo.data!.buildNumber})");
+                          } catch (err) {
+                            try {
+                              if (packageInfo.data!.buildNumber == "") {
+                                return Text(
+                                    "Platform: N/A | App Version: ${packageInfo.data!.version}");
+                              }
+                              return Text(
+                                  "Platform: N/A | App Version: ${packageInfo.data!.version} (${packageInfo.data!.buildNumber})");
+                            } catch (err) {
+                              return const Text(
+                                  "Platform: N/A | App Version: N/A)");
+                            }
+                          }
+                        }
+                        return const Text("");
+                      }),
+                ),
+                const SizedBox(
+                  height: 10.0,
+                ),
+                const Padding(
+                  padding:  EdgeInsets.fromLTRB(22, 10, 22, 10),
+                  child:  Text(
+                    'Verdis Communications is the official communications app released by the Verdisian Government used by co-workers in VRDGOV along with some other extended colleagues and officials outside of Verdis.',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(
+                  height: 10.0,
+                ),
+                RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: 'Created by Garv Shah\n',
+                        style: TextStyle(
+                            color:
+                            Theme.of(context).appBarTheme.toolbarTextStyle!.color),
+                      ),
+                      TextSpan(
+                        text: 'https://www.verdisgov.org',
+                        style: const TextStyle(color: Colors.blue),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            launch('https://www.verdisgov.org');
+                          },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          )),
+    );
+
+    Widget developer = Scaffold(
+      appBar: AppBar(
+          leading: InkWell(
+              onTap: () {
+                Navigator.pop(context);
+              },
+              child: Icon(Icons.arrow_back_ios_new_rounded,
+                  color:
+                      Theme.of(context).appBarTheme.toolbarTextStyle!.color)),
+          backgroundColor: Theme.of(context).primaryColor),
+      body: Padding(
         padding: const EdgeInsets.fromLTRB(0, 25, 0, 0),
         child: ContactUs(
           avatarPadding: 30.0,
@@ -688,7 +779,7 @@ class _HomeState extends State<Home>
           dividerColor: Colors.grey,
           website: 'https://garv-shah.github.io',
           githubUserName: 'garv-shah',
-          tagLine: 'Developer & Student',
+          tagLine: 'Software Developer',
           taglineColor: Theme.of(context).appBarTheme.toolbarTextStyle!.color!,
         ),
       ),
@@ -741,6 +832,14 @@ class _HomeState extends State<Home>
                           .capitalize()),
                   onTap: () {
                     EasyDynamicTheme.of(context).changeTheme();
+                  },
+                ),
+                ListTile(
+                  title: const Text('Developer'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                        context, MaterialPageRoute(builder: (_) => developer));
                   },
                 ),
                 ListTile(
@@ -1391,6 +1490,10 @@ class _HomeState extends State<Home>
     switch (section) {
       case Section.home:
         body = home;
+        break;
+
+      case Section.developer:
+        body = developer;
         break;
 
       case Section.about:
