@@ -118,13 +118,17 @@ class _RegisterPageState extends State<RegisterPage> {
           .then((value) => print("User Added"))
           .catchError((error) => print("Failed to add user: $error"));
 
-      Iterable<QueryDocumentSnapshot<Object?>> tempTotal = (await users.get())
-          .docs
-          .where((element) => element['role'] == 'admin');
+      List adminUIDList = ((await global.doc("private").get()).data() as Map<String, dynamic>)['admin'];
+      print(adminUIDList);
+
       List idsTo = [];
-      for (var element in tempTotal) {
-        idsTo.addAll((element.data() as Map<String, dynamic>)['pushToken']);
+      for (var uid in adminUIDList) {
+        Map userMap = (await users.doc(uid).get()).data() as Map<String, dynamic>;
+        if (userMap['pushToken'] != null) {
+          idsTo.addAll(userMap['pushToken']);
+        }
       }
+      print(idsTo);
       HttpsCallable callable =
           FirebaseFunctions.instance.httpsCallable('newUserNotification');
       await callable.call(<String, dynamic>{

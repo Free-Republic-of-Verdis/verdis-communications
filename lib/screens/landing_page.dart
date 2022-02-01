@@ -56,8 +56,8 @@ class LandingPage extends StatelessWidget {
                   return LoginPage();
                 } else {
                   return StreamBuilder<DocumentSnapshot>(
-                    stream: global
-                        .doc("private")
+                    stream: users
+                        .doc(FirebaseAuth.instance.currentUser!.uid)
                         .snapshots(),
                     builder: (BuildContext context,
                         AsyncSnapshot<DocumentSnapshot> snapshot) {
@@ -70,51 +70,82 @@ class LandingPage extends StatelessWidget {
                       }
 
                       if (snapshot.connectionState == ConnectionState.active) {
-                        Map<String, dynamic> data =
-                            snapshot.data!.data() as Map<String, dynamic>;
+                        return StreamBuilder<DocumentSnapshot>(
+                          stream: global
+                              .doc("private")
+                              .snapshots(),
+                          builder: (BuildContext context,
+                              AsyncSnapshot<DocumentSnapshot> snapshot) {
+                            if (snapshot.hasError) {
+                              return const Text("Something went wrong");
+                            }
 
-                        if (data['approved'].contains(FirebaseAuth.instance.currentUser!.uid)) {
-                          return const Home();
-                        } else {
-                          return Container(
-                            decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                  Color(0xFF404e8f),
-                                  Color(0xFF011569)
-                                ])),
-                            child: const Scaffold(
-                              backgroundColor: Colors.transparent,
-                              body: SafeArea(
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  child: Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(60.0),
-                                      child: Card(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.all(
-                                            Radius.circular(10),
-                                          ),
-                                        ),
-                                        elevation: 10,
-                                        child: Padding(
-                                          padding: EdgeInsets.all(24.0),
-                                          child: Text(
-                                            "Please wait for your account to be approved by an administrator",
-                                            textAlign: TextAlign.center,
+                            if (snapshot.connectionState == ConnectionState.active) {
+                              Map<String, dynamic> data =
+                              snapshot.data!.data() as Map<String, dynamic>;
+
+                              if (data['approved'].contains(FirebaseAuth.instance.currentUser!.uid)) {
+                                return const Home();
+                              } else {
+                                return Container(
+                                  decoration: const BoxDecoration(
+                                      gradient: LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            Color(0xFF404e8f),
+                                            Color(0xFF011569)
+                                          ])),
+                                  child: const Scaffold(
+                                    backgroundColor: Colors.transparent,
+                                    body: SafeArea(
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: Center(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(60.0),
+                                            child: Card(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.all(
+                                                  Radius.circular(10),
+                                                ),
+                                              ),
+                                              elevation: 10,
+                                              child: Padding(
+                                                padding: EdgeInsets.all(24.0),
+                                                child: Text(
+                                                  "Please wait for your account to be approved by an administrator",
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
                                   ),
+                                );
+                              }
+                            }
+
+                            return Container(
+                              decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        Color(0xFF404e8f),
+                                        Color(0xFF011569)
+                                      ])),
+                              child: const Scaffold(
+                                backgroundColor: Colors.transparent,
+                                body: Center(
+                                  child: CircularProgressIndicator(),
                                 ),
                               ),
-                            ),
-                          );
-                        }
+                            );
+                          },
+                        );
                       }
 
                       return Container(
