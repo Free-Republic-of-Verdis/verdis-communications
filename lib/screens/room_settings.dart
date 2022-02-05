@@ -50,11 +50,13 @@ class _RoomSettingsState extends State<RoomSettings> {
   }
 
   Uint8List? _profilePicFile;
+  bool imageChanged = false;
 
   // A simple usage of EditableImage.
 // This method gets called when trying to change an image.
   void _directUpdateImage(Uint8List file) async {
     _profilePicFile = file;
+    imageChanged = true;
 
     setState(() {});
   }
@@ -72,7 +74,7 @@ class _RoomSettingsState extends State<RoomSettings> {
       inputText = input.text;
     }
 
-      if (_profilePicFile != widget.initialImage) {
+      if (imageChanged) {
         var uuid = const Uuid();
         final _firebaseStorage = FirebaseStorage.instance;
 
@@ -109,6 +111,7 @@ class _RoomSettingsState extends State<RoomSettings> {
         finalAction = const Icon(Icons.check);
       });
 
+      Navigator.of(context).pop();
       Navigator.of(context).pop();
   }
 
