@@ -409,6 +409,9 @@ PODS:
     - FirebaseAnalytics (~> 8.11.0)
   - Firebase/CoreOnly (8.11.0):
     - FirebaseCore (= 8.11.0)
+  - Firebase/Crashlytics (8.11.0):
+    - Firebase/CoreOnly
+    - FirebaseCrashlytics (~> 8.11.0)
   - Firebase/Database (8.11.0):
     - Firebase/CoreOnly
     - FirebaseDatabase (~> 8.11.0)
@@ -433,6 +436,10 @@ PODS:
     - Flutter
   - firebase_core (1.12.0):
     - Firebase/CoreOnly (= 8.11.0)
+    - Flutter
+  - firebase_crashlytics (2.5.0):
+    - Firebase/Crashlytics (= 8.11.0)
+    - firebase_core
     - Flutter
   - firebase_database (9.0.6):
     - Firebase/Database (= 8.11.0)
@@ -482,6 +489,13 @@ PODS:
     - GoogleUtilities/Environment (~> 7.7)
     - GoogleUtilities/Logger (~> 7.7)
     - nanopb (~> 2.30908.0)
+  - FirebaseCrashlytics (8.11.0):
+    - FirebaseCore (~> 8.0)
+    - FirebaseInstallations (~> 8.0)
+    - GoogleDataTransport (~> 9.1)
+    - GoogleUtilities/Environment (~> 7.7)
+    - nanopb (~> 2.30908.0)
+    - PromisesObjC (< 3.0, >= 1.2)
   - FirebaseDatabase (8.11.0):
     - FirebaseCore (~> 8.0)
     - leveldb-library (~> 1.22)
@@ -672,6 +686,7 @@ DEPENDENCIES:
   - Firebase/Messaging
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
+  - firebase_crashlytics (from `.symlinks/plugins/firebase_crashlytics/ios`)
   - firebase_database (from `.symlinks/plugins/firebase_database/ios`)
   - firebase_dynamic_links (from `.symlinks/plugins/firebase_dynamic_links/ios`)
   - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
@@ -710,6 +725,7 @@ SPEC REPOS:
     - FirebaseAuth
     - FirebaseCore
     - FirebaseCoreDiagnostics
+    - FirebaseCrashlytics
     - FirebaseDatabase
     - FirebaseDynamicLinks
     - FirebaseFirestore
@@ -744,6 +760,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/firebase_auth/ios"
   firebase_core:
     :path: ".symlinks/plugins/firebase_core/ios"
+  firebase_crashlytics:
+    :path: ".symlinks/plugins/firebase_crashlytics/ios"
   firebase_database:
     :path: ".symlinks/plugins/firebase_database/ios"
   firebase_dynamic_links:
@@ -801,6 +819,7 @@ SPEC CHECKSUMS:
   Firebase: 44dd9724c84df18b486639e874f31436eaa9a20c
   firebase_auth: ccdb84a0d52a2d7897898ae8121689da6e13d71f
   firebase_core: 443bccfd6aa6b42f07be365b500773dc69db2d87
+  firebase_crashlytics: 824c5100677bbc8dbc4cc2b264dab21c0ffa3279
   firebase_database: 0ae3ce8034d44bd151770534edefef869df88b04
   firebase_dynamic_links: f3436f43908547e9a7aa75fb66889c92fc91ff56
   firebase_messaging: 8dc3a6f069774a0bf4dac04dd79fdaffcb62e145
@@ -809,6 +828,7 @@ SPEC CHECKSUMS:
   FirebaseAuth: d96d73aba85d192d7a7aa0b86dd6d7f8ec170b4b
   FirebaseCore: 2f4f85b453cc8fea4bb2b37e370007d2bcafe3f0
   FirebaseCoreDiagnostics: 64d9709d804a6c25bd77841371c1fcfd909d5601
+  FirebaseCrashlytics: 62268addefae79601057818156e8bc69d71fee41
   FirebaseDatabase: ff9b4c7bee14d9f561f26c64a28ac083989f03d5
   FirebaseDynamicLinks: f506c83eb7eba0f9861f84cd6b65c38b3bd5ff6f
   FirebaseFirestore: 3b2e4b532c68809b3df5f8d39d28b3398ffc196b

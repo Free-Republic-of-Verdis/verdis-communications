@@ -8,6 +8,8 @@ import 'themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_dynamic_theme/easy_dynamic_theme.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +19,18 @@ void main() async {
     );
   } else {
     await Firebase.initializeApp();
+  }
+
+  if (kDebugMode) {
+    await FirebaseCrashlytics.instance
+        .setCrashlyticsCollectionEnabled(false);
+  } else {
+    await FirebaseCrashlytics.instance
+        .setCrashlyticsCollectionEnabled(true);
+
+    if (await FirebaseCrashlytics.instance.checkForUnsentReports()) {
+      await FirebaseCrashlytics.instance.sendUnsentReports();
+    }
   }
 
   runApp(

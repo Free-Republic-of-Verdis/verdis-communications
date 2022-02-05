@@ -56,6 +56,7 @@ dependencies:
   uzu_flavored_markdown:
     path: ./uzu_flavored_markdown
   firebase_messaging: ^11.2.5
+  firebase_crashlytics: ^2.5.0
   flutter_local_notifications: ^9.2.0
   cloud_functions: ^3.2.5
   azlistview: ^2.0.0-nullsafety.0

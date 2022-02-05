@@ -438,6 +438,20 @@
             </list>
           </value>
         </entry>
+        <entry key="firebase_crashlytics">
+          <value>
+            <list>
+              <option value="$USER_HOME$/development/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_crashlytics-2.5.0/lib" />
+            </list>
+          </value>
+        </entry>
+        <entry key="firebase_crashlytics_platform_interface">
+          <value>
+            <list>
+              <option value="$USER_HOME$/development/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_crashlytics_platform_interface-3.1.13/lib" />
+            </list>
+          </value>
+        </entry>
         <entry key="firebase_database">
           <value>
             <list>
@@ -1622,6 +1636,8 @@
       <root url="file://$USER_HOME$/development/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_core-1.12.0/lib" />
       <root url="file://$USER_HOME$/development/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_core_platform_interface-4.2.4/lib" />
       <root url="file://$USER_HOME$/development/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_core_web-1.5.4/lib" />
+      <root url="file://$USER_HOME$/development/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_crashlytics-2.5.0/lib" />
+      <root url="file://$USER_HOME$/development/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_crashlytics_platform_interface-3.1.13/lib" />
       <root url="file://$USER_HOME$/development/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_database-9.0.6/lib" />
       <root url="file://$USER_HOME$/development/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_database_platform_interface-0.2.0+5/lib" />
       <root url="file://$USER_HOME$/development/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_database_web-0.2.0+5/lib" />
