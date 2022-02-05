@@ -19,17 +19,17 @@ void main() async {
     );
   } else {
     await Firebase.initializeApp();
-  }
 
-  if (kDebugMode) {
-    await FirebaseCrashlytics.instance
-        .setCrashlyticsCollectionEnabled(false);
-  } else {
-    await FirebaseCrashlytics.instance
-        .setCrashlyticsCollectionEnabled(true);
+    if (kDebugMode) {
+      await FirebaseCrashlytics.instance
+          .setCrashlyticsCollectionEnabled(false);
+    } else {
+      await FirebaseCrashlytics.instance
+          .setCrashlyticsCollectionEnabled(true);
 
-    if (await FirebaseCrashlytics.instance.checkForUnsentReports()) {
-      await FirebaseCrashlytics.instance.sendUnsentReports();
+      if (await FirebaseCrashlytics.instance.checkForUnsentReports()) {
+        await FirebaseCrashlytics.instance.sendUnsentReports();
+      }
     }
   }
 

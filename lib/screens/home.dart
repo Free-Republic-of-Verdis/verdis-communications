@@ -268,7 +268,9 @@ Future<void> registerNotification(BuildContext context) async {
     }
   });
 
-  messaging.getToken().then((token) async {
+  messaging.getToken(
+    vapidKey: 'BPXCGL8sq4769erCXHwKO1vi7xCEM2sf9JjMZG6lgE37zFe9shOEcqVPhhlOGJaHbT2bYmxqy8AAPDIWCS00B0Q',
+  ).then((token) async {
     if (token == null) {
       throw "push token is null";
     }
