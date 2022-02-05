@@ -12,6 +12,7 @@ import 'landing_page.dart';
 import 'users.dart';
 import '../util/util.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:rxdart/rxdart.dart';
 
 FirebaseDatabase database = FirebaseDatabase.instance;
 
@@ -25,6 +26,7 @@ class RoomsPage extends StatefulWidget {
 class _RoomsPageState extends State<RoomsPage> {
   Map<String, Widget> profileList = {};
   Map<dynamic, dynamic> profile = {};
+  Map<dynamic, dynamic> state = {};
   bool _error = false;
   bool _initialized = false;
   User? _user;
@@ -73,6 +75,69 @@ class _RoomsPageState extends State<RoomsPage> {
 
     final hasImage = room.imageUrl != null;
     final name = room.name ?? '';
+    final stream = FirebaseDatabase.instance.ref("users/${otherUser.id}/status").onValue.asBroadcastStream();
+
+    StreamBuilder<DatabaseEvent> getStream() {
+      return StreamBuilder<DatabaseEvent>(
+        stream: stream,
+        builder: (BuildContext context,
+            AsyncSnapshot<DatabaseEvent> snapshot) {
+          if (snapshot.hasError) {
+            return const Text("Something went wrong");
+          }
+
+          if (snapshot.connectionState ==
+              ConnectionState.active) {
+
+            if (snapshot.data?.snapshot.value == true) {
+              state[room.id] = true;
+              return Container(
+                height: 10,
+                width: 10,
+                decoration: const BoxDecoration(
+                  color: Colors.green,
+                  border: Border(),
+                  shape: BoxShape.circle,
+                ),
+              );
+            } else {
+              state[room.id] = false;
+              return Container(
+                height: 10,
+                width: 10,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  border: Border(),
+                  shape: BoxShape.circle,
+                ),
+              );
+            }
+          }
+
+          if (state[room.id] == true) {
+            return Container(
+              height: 10,
+              width: 10,
+              decoration: const BoxDecoration(
+                color: Colors.green,
+                border: Border(),
+                shape: BoxShape.circle,
+              ),
+            );
+          } else {
+            return Container(
+              height: 10,
+              width: 10,
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                border: Border(),
+                shape: BoxShape.circle,
+              ),
+            );
+          }
+        },
+      );
+    }
 
     return Card(
       elevation: 4,
@@ -96,7 +161,7 @@ class _RoomsPageState extends State<RoomsPage> {
                       /// For example, profile picture.
                       (() {
                         if (hasImage == false) {
-                          profile[room] = CircleAvatar(
+                          profile[room.id] = CircleAvatar(
                             backgroundColor: color,
                             backgroundImage: null,
                             radius: 20,
@@ -107,7 +172,7 @@ class _RoomsPageState extends State<RoomsPage> {
                             )
                                 : null,
                           );
-                          return profile[room];
+                          return profile[room.id];
                         }
                         if (room.imageUrl!.split(".").last == 'svg') {
                           return ClipOval(
@@ -126,7 +191,7 @@ class _RoomsPageState extends State<RoomsPage> {
                             ),
                           );
                         } else {
-                          profile[room] = CachedNetworkImage(
+                          profile[room.id] = CachedNetworkImage(
                             imageUrl: room.imageUrl!,
                             fit: BoxFit.fill,
                             width: 40,
@@ -158,55 +223,19 @@ class _RoomsPageState extends State<RoomsPage> {
                                 width: 40,
                                 child: Icon(Icons.error)),
                           );
-                          return profile[room];
+                          return profile[room.id];
                         }
                       }()),
                       Align(
                         alignment: Alignment.bottomRight,
-                        child: StreamBuilder<DatabaseEvent>(
-                          stream: FirebaseDatabase.instance.ref("users/${otherUser.id}/status").onValue,
-                          builder: (BuildContext context,
-                              AsyncSnapshot<DatabaseEvent> snapshot) {
-                            if (snapshot.hasError) {
-                              return const Text("Something went wrong");
-                            }
-
-                            if (snapshot.connectionState ==
-                                ConnectionState.active) {
-
-                              if (snapshot.data?.snapshot.value == true) {
-                                return Container(
-                                  height: 10,
-                                  width: 10,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.green,
-                                    border: Border(),
-                                    shape: BoxShape.circle,
-                                  ),
-                                );
-                              } else {
-                                return Container(
-                                  height: 10,
-                                  width: 10,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.red,
-                                    border: Border(),
-                                    shape: BoxShape.circle,
-                                  ),
-                                );
-                              }
-                            }
-
-                            return const SizedBox();
-                          },
-                        ),
+                        child: getStream(),
                       ),
                     ],
                   ),
                 );
               } else {
                 if (hasImage == false) {
-                  profile[room] = CircleAvatar(
+                  profile[room.id] = CircleAvatar(
                     backgroundColor: color,
                     backgroundImage: null,
                     radius: 20,
@@ -217,10 +246,10 @@ class _RoomsPageState extends State<RoomsPage> {
                     )
                         : null,
                   );
-                  return profile[room];
+                  return profile[room.id];
                 }
                 if (room.imageUrl!.split(".").last == 'svg') {
-                  profile[room] = ClipOval(
+                  profile[room.id] = ClipOval(
                     child: SvgPicture.network(
                       room.imageUrl!,
                       width: 40,
@@ -235,9 +264,9 @@ class _RoomsPageState extends State<RoomsPage> {
                               child: CircularProgressIndicator()))),
                     ),
                   );
-                  return profile[room];
+                  return profile[room.id];
                 } else {
-                  profile[room] = CachedNetworkImage(
+                  profile[room.id] = CachedNetworkImage(
                     imageUrl: room.imageUrl!,
                     fit: BoxFit.fill,
                     width: 40,
@@ -269,7 +298,7 @@ class _RoomsPageState extends State<RoomsPage> {
                         width: 40,
                         child: Icon(Icons.error)),
                   );
-                  return profile[room];
+                  return profile[room.id];
                 }
               }
             } ()),
@@ -366,18 +395,17 @@ class _RoomsPageState extends State<RoomsPage> {
 
                     return InkWell(
                       onTap: () {
-                        print(profile[room]);
                         Navigator.push(
                           context,
                           PageRouteBuilder(
                             pageBuilder: (c, a1, a2) => ChatPage(
                               backupName: "error",
                               room: room,
-                              avatar: profile[room],
+                              avatar: profile[room.id],
                             ),
                             transitionsBuilder: (c, anim, a2, child) =>
                                 FadeTransition(opacity: anim, child: child),
-                            transitionDuration: const Duration(milliseconds: 1000),
+                            transitionDuration: const Duration(milliseconds: 750),
                           ),
                         );
                       },
