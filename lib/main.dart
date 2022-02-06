@@ -26,10 +26,6 @@ void main() async {
     } else {
       await FirebaseCrashlytics.instance
           .setCrashlyticsCollectionEnabled(true);
-
-      if (await FirebaseCrashlytics.instance.checkForUnsentReports()) {
-        await FirebaseCrashlytics.instance.sendUnsentReports();
-      }
     }
   }
 
