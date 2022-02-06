@@ -245,9 +245,11 @@ class _UsersPageState extends State<UsersPage> {
   void loadData() async {
     // Get docs from collection reference
     QuerySnapshot querySnapshot = await _collectionRef.get();
+    DocumentSnapshot<Map<String, dynamic>> private = await FirebaseFirestore.instance.collection('global').doc('private').get();
+    Map<String, dynamic> privateMap= private.data() as Map<String, dynamic>;
 
     // Get data from docs and convert map to List
-    originList = querySnapshot.docs
+    originList = querySnapshot.docs.where((element) => privateMap['approved'].contains(element.id))
         .map((doc) {
       Map<String, dynamic> userMap = doc.data() as Map<String, dynamic>;
       userMap['createdAt'] = userMap['createdAt']?.millisecondsSinceEpoch;

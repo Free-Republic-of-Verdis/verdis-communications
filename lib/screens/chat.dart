@@ -470,7 +470,7 @@ class _ChatPageState extends State<ChatPage> {
                         }
                       }
 
-                      return const CircularProgressIndicator();
+                      return const SizedBox(width: 1, height: 1);
                     },
                   ),
                 ],
