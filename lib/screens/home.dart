@@ -2,7 +2,6 @@ import "dart:math";
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:easy_dynamic_theme/easy_dynamic_theme.dart';
 import 'package:edge_alerts/edge_alerts.dart';
 import 'package:flutter/gestures.dart';
@@ -34,7 +33,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:verdiscom/util/util.dart';
-import 'dart:convert';
+import 'package:universal_html/html.dart' as html;
 import 'package:flutter_firebase_chat_core/flutter_firebase_chat_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_app_badger/flutter_app_badger.dart';
@@ -342,6 +341,10 @@ class _HomeState extends State<Home>
 
   @override
   void initState() {
+    html.window.onBeforeUnload.listen((event) {
+      setStatus(false);
+    });
+
     registerNotification(context);
     client = http.Client();
     super.initState();
@@ -349,12 +352,14 @@ class _HomeState extends State<Home>
     controller = TabController(length: 2, vsync: this);
     WidgetsBinding.instance?.addObserver(this);
     setStatus(true);
-    if (Platform.isAndroid || Platform.isIOS) {
-      FlutterAppBadger.isAppBadgeSupported().then((supported) {
-        if (supported) {
-          FlutterAppBadger.removeBadge();
-        }
-      });
+    if (!kIsWeb) {
+      if (Platform.isAndroid || Platform.isIOS) {
+        FlutterAppBadger.isAppBadgeSupported().then((supported) {
+          if (supported) {
+            FlutterAppBadger.removeBadge();
+          }
+        });
+      }
     }
   }
 
