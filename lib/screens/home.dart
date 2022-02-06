@@ -37,6 +37,7 @@ import 'package:verdiscom/util/util.dart';
 import 'dart:convert';
 import 'package:flutter_firebase_chat_core/flutter_firebase_chat_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter_app_badger/flutter_app_badger.dart';
 
 import 'chat.dart';
 
@@ -348,6 +349,13 @@ class _HomeState extends State<Home>
     controller = TabController(length: 2, vsync: this);
     WidgetsBinding.instance?.addObserver(this);
     setStatus(true);
+    if (Platform.isAndroid || Platform.isIOS) {
+      FlutterAppBadger.isAppBadgeSupported().then((supported) {
+        if (supported) {
+          FlutterAppBadger.removeBadge();
+        }
+      });
+    }
   }
 
   void setStatus(bool status) async {
