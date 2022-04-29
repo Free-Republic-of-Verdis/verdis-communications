@@ -17,10 +17,10 @@ class LabelOverrides extends DefaultLocalizations {
 
 final providerConfigs = [
   const EmailProviderConfiguration(),
+  const AppleProviderConfiguration(),
   const GoogleProviderConfiguration(
       clientId:
           '686272364376-ppii4j9to3gumk7t7tbvmo7f7ug7j3k6.apps.googleusercontent.com'),
-  const AppleProviderConfiguration(),
 ];
 
 class LoginPage extends StatelessWidget {

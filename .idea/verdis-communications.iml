@@ -348,6 +348,18 @@
       <excludeFolder url="file://$MODULE_DIR$/windows/flutter/ephemeral/.plugin_symlinks/file_selector_windows/example/.dart_tool" />
       <excludeFolder url="file://$MODULE_DIR$/windows/flutter/ephemeral/.plugin_symlinks/file_selector_windows/example/build" />
       <excludeFolder url="file://$MODULE_DIR$/windows/flutter/ephemeral/.plugin_symlinks/file_selector_windows/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/firebase_crashlytics/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/firebase_crashlytics/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/firebase_crashlytics/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/flutter_app_badger/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/flutter_app_badger/build" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/flutter_app_badger/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/flutter_app_badger/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/flutter_app_badger/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/flutter_app_badger/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/firebase_crashlytics/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/firebase_crashlytics/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/ios/.symlinks/plugins/firebase_crashlytics/build" />
     </content>
     <orderEntry type="jdk" jdkName="Android API 30 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
